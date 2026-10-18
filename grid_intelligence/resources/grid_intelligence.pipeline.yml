@@ -17,4 +17,6 @@ resources:
         schema_silver: ${resources.schemas.silver.name}
         schema_gold: ${resources.schemas.gold.name}
         volume_landing: /Volumes/${var.catalog}/${resources.schemas.raw.name}/${resources.volumes.landing.name}
-        duracao_minima_interrupcao: ${var.duracao_minima_interrupcao}
+        duracao_minima_interrupcao_min: ${var.duracao_minima_interrupcao}
+        queda_consumo_pct: ${var.queda_consumo_pct}
+        estabilidade_conjunto_pct: ${var.estabilidade_conjunto_pct}

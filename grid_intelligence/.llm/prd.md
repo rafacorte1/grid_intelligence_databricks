@@ -27,19 +27,19 @@ contexto fornecido pelo prompt. Nao sao resultados calculados no dataset.
 
 ## Regras de negocio
 
-O prompt fornece dez regras. As quatro posicoes ausentes ficam reservadas abaixo,
-sem inventar requisitos; suas definicoes precisam ser fornecidas nas proximas etapas.
+O prompt 00 forneceu dez regras. Os prompts 02 e 04 completaram RN-02, RN-05 e RN-08.
+A RN-03 permanece reservada, sem inventar requisitos.
 
 | Regra | Definicao |
 |---|---|
 | RN-01 | Somente interrupcoes com duracao de 3 minutos ou mais entram em DEC e FEC. Aplicar na transformacao, nunca no relatorio. |
-| RN-02 | Nao fornecida no prompt 00; definicao pendente. |
+| RN-02 | DEC = soma de duracao_horas vezes qtd_ucs_afetadas dividida pelo total de UCs do conjunto. FEC = soma de qtd_ucs_afetadas dividida pelo mesmo total. |
 | RN-03 | Nao fornecida no prompt 00; definicao pendente. |
 | RN-04 | DEC e FEC tem uma unica definicao, compartilhada por dashboard, agente e relatorio. |
-| RN-05 | Nao fornecida no prompt 00; definicao pendente. |
+| RN-05 | A apuracao de continuidade e mensal por conjunto. DEC mensal e acumulado do periodo sao medidas distintas na metric view. |
 | RN-06 | Uma UC so e candidata a inspecao quando o consumo cai contra o proprio baseline enquanto a vizinhanca permanece estavel, simultaneamente. |
 | RN-07 | A saida e prioridade de inspecao alta, media ou baixa. Nunca usar fraude, furto ou culpado como rotulo de saida em coluna, variavel ou comentario. Mudanca de morador, imovel desocupado, defeito de medidor e erro de leitura tambem explicam quedas. |
-| RN-08 | Nao fornecida no prompt 00; definicao pendente. |
+| RN-08 | Prioridade de inspecao usa regra explicavel, sem modelo supervisionado sem rotulo confiavel. Cada decisao expoe os dois eixos e os numeros que a sustentam. |
 | RN-09 | Mascarar dados pessoais das transcricoes antes de qualquer analise de conteudo. |
 | RN-10 | Preservar o texto original identificado com acesso restrito. Protecao na leitura e mascaramento para analise coexistem. |
 | RN-11 | A ingestao nao filtra, corrige ou aplica regra de negocio; leituras invalidas sao evidencias sobre o medidor. |

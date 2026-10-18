@@ -20,6 +20,18 @@ variables:
   duracao_minima_interrupcao:
     description: Duracao minima em minutos para interrupcoes na silver
     default: "3"
+  queda_consumo_pct:
+    description: Queda percentual minima contra o baseline individual
+    default: "30"
+  estabilidade_conjunto_pct:
+    description: Variacao percentual maxima absoluta da vizinhanca estavel
+    default: "10"
+  warehouse_id:
+    description: SQL warehouse serverless para governanca e metric view
+    default: 817b70a3d20bae30
+  grupo_atendimento:
+    description: Grupo de conta autorizado a ler os dados pessoais originais
+    default: atendimento
 
 targets:
   dev:

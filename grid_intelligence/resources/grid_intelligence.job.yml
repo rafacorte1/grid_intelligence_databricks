@@ -1,0 +1,35 @@
+resources:
+  jobs:
+    grid_intelligence_atualizar:
+      name: grid_intelligence_atualizar
+      performance_target: STANDARD
+      max_concurrent_runs: 1
+      tags:
+        aidevkit_project: ai-dev-kit
+      parameters:
+        - name: catalogo
+          default: ${var.catalog}
+        - name: schema_bronze
+          default: ${resources.schemas.bronze.name}
+        - name: schema_gold
+          default: ${resources.schemas.gold.name}
+        - name: grupo_atendimento
+          default: ${var.grupo_atendimento}
+      tasks:
+        - task_key: pipeline
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.grid_intelligence.id}
+        - task_key: governanca
+          depends_on:
+            - task_key: pipeline
+          sql_task:
+            warehouse_id: ${var.warehouse_id}
+            file:
+              path: ../src/sql/governanca_dado_pessoal.sql
+        - task_key: metric_view
+          depends_on:
+            - task_key: governanca
+          sql_task:
+            warehouse_id: ${var.warehouse_id}
+            file:
+              path: ../src/sql/metric_view_continuidade.sql
