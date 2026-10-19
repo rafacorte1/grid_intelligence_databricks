@@ -46,9 +46,11 @@ criteria run against the real workspace, and anything that failed stays document
 [validation report](grid_intelligence/docs/validation.md) — including the parts that are still
 open.
 
-This is one of two modes I work in. Earlier projects were built file by file, which is what
-makes the delegation a choice rather than a dependency: the specification and the review are
-the parts that do not get delegated.
+This is one of two modes I work in. Earlier projects were built directly, file by file — for
+example [data_modelling_databricks](https://github.com/rafacorte1/data_modelling_databricks),
+an e-commerce dimensional model with SCD Type 2 written in Databricks notebooks and SQL. That
+is what makes the delegation a choice rather than a dependency: the specification and the
+review are the parts that do not get delegated.
 
 ## Architecture
 
