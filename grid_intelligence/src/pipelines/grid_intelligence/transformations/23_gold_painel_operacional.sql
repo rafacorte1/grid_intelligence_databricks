@@ -1,5 +1,5 @@
 CREATE OR REFRESH MATERIALIZED VIEW ${catalogo}.${schema_gold}.painel_operacional_dia
-COMMENT 'Ocorrencias diarias por conjunto com atendimento, rede e consumo. Prioridades de inspecao aparecem somente no ultimo dia do dataset. Acao prioriza saude, ouvidoria, rede e visita tecnica.'
+COMMENT 'Daily district-level events combined with service calls, network and consumption. Inspection priorities appear only on the last day of the dataset. Recommended action prioritizes health risk, ombudsman escalation, network and site visits.'
 AS WITH interrupcoes AS (
   SELECT id_conjunto, data_evento AS data,
     count(*) AS qtd_interrupcoes, sum(uc_horas_interrompidas) AS uc_horas_interrompidas,
@@ -20,7 +20,7 @@ AS WITH interrupcoes AS (
   SELECT id_conjunto, nome_conjunto, municipio, count(*) AS total_ucs
   FROM ${catalogo}.${schema_silver}.unidades_consumidoras GROUP BY ALL
 ), diario AS (
-  -- Agregar antes de unir evita multiplicar eventos. FULL OUTER preserva dias de cada origem.
+  -- Aggregating before the join avoids multiplying events. FULL OUTER keeps days from every source.
   SELECT coalesce(i.id_conjunto, c.id_conjunto, l.id_conjunto) AS id_conjunto,
     coalesce(i.data, c.data, l.data) AS data,
     coalesce(i.qtd_interrupcoes, 0) AS qtd_interrupcoes,

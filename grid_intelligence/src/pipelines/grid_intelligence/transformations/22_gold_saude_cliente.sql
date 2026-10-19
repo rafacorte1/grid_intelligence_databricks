@@ -1,5 +1,5 @@
 CREATE OR REFRESH MATERIALIZED VIEW ${catalogo}.${schema_gold}.saude_cliente
-COMMENT 'Sinais de escalada ao atendimento regulatorio por cliente no historico. Reincidencia e medida em janelas de 30 dias. Considera todas as UCs do cliente e preserva somente falas anonimizadas.'
+COMMENT 'Historical signals of escalation to the regulatory service channel, per customer. Recurrence is measured over 30-day windows. Considers every UC of the customer and keeps only anonymized transcripts.'
 TBLPROPERTIES ('delta.feature.timestampNtz' = 'supported')
 AS WITH janelas AS (
   SELECT *, count(*) OVER janela AS chamados_30_dias,

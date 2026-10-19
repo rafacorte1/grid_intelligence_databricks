@@ -1,4 +1,4 @@
-"""Valida os contratos do Lakeview e executa datasets e projecoes no warehouse."""
+"""Validate the Lakeview contracts and execute datasets and projections on the warehouse."""
 
 import argparse
 import json
@@ -36,7 +36,7 @@ def main():
                 yield from bindings(child)
 
     for sql in datasets.values():
-        assert not re.search(r'\b(?:FROM|JOIN)\s+\w+\.', sql, re.I), 'Usar tabelas sem namespace'
+        assert not re.search(r'\b(?:FROM|JOIN)\s+\w+\.', sql, re.I), 'Queries must not use unqualified tables'
         assert 'grid_dev' not in sql and 'grid_intelligence.' not in sql
     assert 'MEASURE(`DEC`)' in datasets['continuidade']
     for page in dashboard['pages']:
@@ -61,7 +61,7 @@ def main():
                 assert 'period' in spec['encodings'] and p['height'] >= 3
             if spec['widgetType'] == 'combo':
                 axes = spec['encodings']['y']
-                assert 'scale' not in axes, 'Escala unica esconde o volume de chamados'
+                assert 'scale' not in axes, 'A single scale hides the service call volume'
                 assert all(axes[a]['scale']['type'] == 'quantitative'
                            for a in ('primary', 'secondary'))
             if w['name'] == 'periodo-serie':
@@ -92,12 +92,12 @@ def main():
         args.results.write_text(json.dumps(responses, ensure_ascii=False, indent=2))
     failed = []
     for (name, _), response in zip(checks, responses):
-        print(f"{name}: {response['state']} ({len(response.get('rows', []))} linhas)")
+        print(f"{name}: {response['state']} ({len(response.get('rows', []))} rows)")
         if response['state'] != 'SUCCEEDED':
             failed.append((name, response.get('error')))
     if failed:
         raise RuntimeError(json.dumps(failed, ensure_ascii=False))
-    print(f'{len(checks)} consultas e contratos de widgets validados.')
+    print(f'{len(checks)} queries and widget contracts validated.')
 
 
 if __name__ == '__main__':

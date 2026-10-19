@@ -1,25 +1,25 @@
-# Dashboard AI/BI — plano
+# AI/BI dashboard — plan
 
-Especificacao: prompts/05-dashboard.md. Publicar somente dev, usando o perfil
-grid_intelligence, o warehouse existente e a gold como contexto dos datasets.
+Specification: prompts/05-dashboard.md. Publish only to dev, using the
+grid_intelligence profile, the existing warehouse and gold as the dataset context.
 
-- [x] Criar src/dashboards/grid_intelligence.lvdash.json com duas paginas:
-  operacao, com quatro KPIs temporais, serie de chamados/horas-UC, DEC via
-  MEASURE e acoes atuais; inspecao e clientes, com aviso de prioridade,
-  distribuicao por bairro e tabelas de evidencia e ultima fala anonimizada.
-- [x] Declarar resources/grid_intelligence.dashboard.yml com dataset_catalog,
-  dataset_schema e warehouse_id referenciados do bundle.
-- [x] Executar cada SQL via CLI no contexto gold e verificar bindings e versoes.
-- [ ] Concluir aceite visual final. Deploy e publicacao em dev realizados; abrir ambas as paginas no navegador,
-  conferir os widgets e filtros e salvar um print real da pagina 1.
+- [x] Create src/dashboards/grid_intelligence.lvdash.json with two pages:
+  operations, with four time-based KPIs, a service calls/UC-hours series, DEC via
+  MEASURE and current actions; inspection and customers, with a priority caveat,
+  distribution by neighborhood and tables of evidence and anonymized last utterance.
+- [x] Declare resources/grid_intelligence.dashboard.yml with dataset_catalog,
+  dataset_schema and warehouse_id referenced from the bundle.
+- [x] Run each SQL via CLI in the gold context and verify bindings and versions.
+- [ ] Complete the final visual acceptance. Deploy and publishing to dev are done; open both pages in the browser,
+  check the widgets and filters and save a real screenshot of page 1.
 
-Recorte temporal ancorado no dataset. Prioridade de inspecao e uma fotografia
-da ultima carga: indicar a limitacao do historico no quarto KPI. Nao recalcular
-DEC/FEC, nao acessar bronze/silver e nao ampliar permissoes de compartilhamento.
+Time window anchored to the dataset. Inspection priority is a snapshot
+of the latest load: flag the historical limitation in the fourth KPI. Do not recompute
+DEC/FEC, do not access bronze/silver and do not broaden sharing permissions.
 
-Deploy inicial concluido. Eixo duplo corrigido no editor e publicado, com a
-configuracao equivalente preservada no JSON local. A reconciliacao final do
-bundle exige autorizacao explicita para --force por causa do etag remoto.
+Initial deploy completed. Dual axis fixed in the editor and published, with the
+equivalent configuration preserved in the local JSON. The final bundle
+reconciliation requires explicit authorization for --force because of the remote etag.
 
-A verificacao SQL passou, mas a sessao final apresentou DEC em branco de forma
-intermitente. Print mantido privado; aceite visual final permanece pendente.
+The SQL verification passed, but the final session showed DEC blank intermittently.
+Screenshot kept private; final visual acceptance remains pending.

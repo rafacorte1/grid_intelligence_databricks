@@ -16,20 +16,20 @@ sync:
 
 variables:
   catalog:
-    description: Catalogo do ambiente
+    description: Environment catalog
   duracao_minima_interrupcao:
-    description: Duracao minima em minutos para interrupcoes na silver
+    description: Minimum interruption duration in minutes for Silver
     default: "3"
   queda_consumo_pct:
-    description: Queda percentual minima contra o baseline individual
+    description: Minimum percentage drop against the individual baseline
     default: "30"
   estabilidade_conjunto_pct:
-    description: Variacao percentual maxima absoluta da vizinhanca estavel
+    description: Maximum absolute percentage variation allowed for a stable neighborhood
     default: "10"
   warehouse_id:
-    description: SQL warehouse serverless para governanca e metric view
+    description: Serverless SQL warehouse used for governance and the metric view
   grupo_atendimento:
-    description: Grupo de conta autorizado a ler os dados pessoais originais
+    description: Account group allowed to read the original personal data
     default: atendimento
 
 targets:

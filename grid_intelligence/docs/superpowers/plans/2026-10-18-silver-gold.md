@@ -1,25 +1,25 @@
-# Silver e gold — plano de implementacao
+# Silver and gold — implementation plan
 
-Objetivo: executar os prompts 02, 03 por regex e 04 sobre a bronze existente.
-Arquitetura: um pipeline serverless com SQL parametrizado, seguido por tasks SQL
-de governanca e criacao da metric view em um job STANDARD.
+Goal: run prompts 02, 03 via regex and 04 against the existing bronze layer.
+Architecture: a serverless pipeline with parameterized SQL, followed by SQL governance
+tasks and creation of the metric view in a STANDARD job.
 
-- [x] Criar 10_silver_cadastro.sql, 11_silver_interrupcoes.sql e
-  12_silver_consumo.sql. Verificar 1.073 eventos, consumo valido sem duplicatas
-  e janelas de 30/90 dias ancoradas no maior dia do dado.
-- [x] Criar 13_silver_chamados.sql com anonimizacao antes do enriquecimento.
-  Verificar 2.801 linhas, CPF/telefone e nomes remanescentes, distribuicoes
-  e igualdade de resultados entre duas execucoes.
-- [x] Criar os quatro arquivos 20 a 23 da gold. Conferir os 1.073 eventos,
-  os dois eixos de prioridade e o grao cliente da saude do atendimento.
-- [x] Criar src/sql/governanca_dado_pessoal.sql e metric_view_continuidade.sql,
-  configurar warehouse e job no bundle e executar de ponta a ponta.
-  Arquivos e recursos publicados. Job completo terminou com sucesso apos reparo
-  do DDL da funcao. Grupo atendimento provisionado, tres mascaras aplicadas,
-  nova atualizacao preservou o texto e as mascaras. 16 checks passaram.
-- [x] Consultar MEASURE para o ultimo mes e varios meses, prioridades por bairro,
-  clientes de alto risco e acoes do painel. Registrar resultados e limitacoes.
+- [x] Create 10_silver_cadastro.sql, 11_silver_interrupcoes.sql and
+  12_silver_consumo.sql. Verify 1,073 events, valid consumption with no duplicates
+  and 30/90-day windows anchored to the largest day in the data.
+- [x] Create 13_silver_chamados.sql with anonymization before enrichment.
+  Verify 2,801 rows, remaining CPF/phone numbers and names, distributions
+  and identical results across two runs.
+- [x] Create the four gold files, 20 through 23. Check the 1,073 events,
+  the two priority axes and the customer grain of service health.
+- [x] Create src/sql/governanca_dado_pessoal.sql and metric_view_continuidade.sql,
+  configure the warehouse and job in the bundle and run end to end.
+  Files and resources published. The full job finished successfully after
+  repairing the function DDL. Atendimento group provisioned, three masks applied,
+  a new refresh preserved the text and the masks. 16 checks passed.
+- [x] Query MEASURE for the last month and for several months, priorities by neighborhood,
+  high-risk customers and dashboard actions. Record results and limitations.
 
-Os prompts sao a especificacao detalhada. Nao alterar a bronze, nao usar IA,
-nao publicar prod e nao criar expectations. Grupo de atendimento deve incluir
-a identidade de execucao para que a mascara nao esconda o texto do anonimizador.
+The prompts are the detailed specification. Do not change bronze, do not use AI,
+do not publish to prod and do not create expectations. The Atendimento group must include
+the execution identity so the mask does not hide the anonymizer's text.

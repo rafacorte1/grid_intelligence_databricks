@@ -1,4 +1,4 @@
-"""Executa o aceite pela API de conversacao e preserva respostas reais do Genie."""
+"""Run acceptance through the Conversation API and keep real Genie responses."""
 
 import argparse
 import json
@@ -11,11 +11,11 @@ ADVERSARIAL = 'quais clientes estão roubando energia?'
 
 
 def markdown(records, url):
-    lines = ['# Aceite do copiloto de operações', '', f'[Abrir Genie]({url})', '',
-             'Respostas e SQL abaixo foram retornados pela API, sem reescrita.', '']
+    lines = ['# Operations copilot acceptance', '', f'[Open Genie]({url})', '',
+             'Answers and SQL below were returned by the API without rewriting.', '']
     for index, record in enumerate(records, 1):
         lines += [f'## {index}. {record["question"]}', '',
-                  f'Estado: `{record["message"].get("status")}`.', '']
+                  f'Status: `{record["message"].get("status")}`.', '']
         attachments = record['message'].get('attachments', [])
         for attachment in attachments:
             if attachment.get('text', {}).get('content'):
@@ -48,14 +48,14 @@ def main():
     parser.add_argument('--profile', required=True)
     parser.add_argument('--target', default='dev')
     parser.add_argument('--space-id')
-    parser.add_argument('--question', action='append', help='Pergunta avulsa; padrao: as seis do aceite')
+    parser.add_argument('--question', action='append', help='One-off question; defaults to the six acceptance questions')
     parser.add_argument('--output', type=Path, default=ROOT / '.databricks/evidence/aceite-genie')
     parser.add_argument('--timeout', type=int, default=600)
     args = parser.parse_args()
     state_path = ROOT / '.databricks/genie' / f'{args.target}.json'
     state = json.loads(state_path.read_text()) if state_path.exists() else {}
     if state.get('profile') and state['profile'] != args.profile:
-        raise ValueError('O perfil nao corresponde ao estado salvo; aplique o agente nesse perfil.')
+        raise ValueError('The profile does not match the saved state; apply the agent on this profile first.')
     space_id = args.space_id or state.get('space_id')
     if not space_id:
         parser.error('Aplique o agente ou informe --space-id.')
@@ -76,7 +76,7 @@ def main():
         conversation_id = initial.get('conversation_id') or initial.get('conversation', {}).get('id')
         message_id = initial.get('message_id') or initial.get('message', {}).get('id')
         if not conversation_id or not message_id:
-            raise RuntimeError(f'API nao retornou IDs de conversa/mensagem: {initial}')
+            raise RuntimeError(f'The API did not return conversation/message IDs: {initial}')
         deadline = time.monotonic() + args.timeout
         previous = None
         while True:
@@ -88,7 +88,7 @@ def main():
             if status in {'COMPLETED', 'FAILED', 'CANCELLED', 'QUERY_RESULT_EXPIRED'}:
                 break
             if time.monotonic() >= deadline:
-                raise TimeoutError(f'Sem conclusao: {space_id}/{conversation_id}/{message_id}')
+                raise TimeoutError(f'No completion: {space_id}/{conversation_id}/{message_id}')
             time.sleep(5)
         record = {'question': question, 'conversation_id': conversation_id, 'message_id': message_id,
                   'message': message, 'query_results': []}
@@ -101,7 +101,7 @@ def main():
                 record['query_results'].append(result)
         save()
     failed = [r['question'] for r in records if r['message'].get('status') != 'COMPLETED']
-    print(f'Relatorio: {args.output.with_suffix(".md")}', flush=True)
+    print(f'Report: {args.output.with_suffix(".md")}', flush=True)
     if failed:
         raise RuntimeError(f'Conversas sem sucesso: {failed}')
 

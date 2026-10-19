@@ -1,5 +1,5 @@
 CREATE OR REFRESH MATERIALIZED VIEW ${catalogo}.${schema_gold}.continuidade_conjunto_mes
-COMMENT 'Insumos mensais de continuidade por conjunto. DEC e FEC sao definidos exclusivamente na metric view continuidade_metricas.'
+COMMENT 'Monthly continuity inputs per district. DEC and FEC are defined only in the continuidade_metricas metric view.'
 TBLPROPERTIES ('delta.feature.timestampNtz' = 'supported')
 AS WITH cadastro AS (
   SELECT id_conjunto, nome_conjunto, municipio, count(*) AS total_ucs
@@ -18,7 +18,7 @@ AS WITH cadastro AS (
     date_trunc('MONTH', cast(max(data) AS TIMESTAMP_NTZ)), INTERVAL 1 MONTH)) AS mes_apuracao
   FROM ${catalogo}.${schema_bronze}.consumo_diario
 )
--- Mes sem evento tambem tem base de UCs: omiti-lo inflaria a media mensal.
+-- A month without an event still has a UC base: omitting it would inflate the monthly average.
 SELECT u.id_conjunto, u.nome_conjunto, u.municipio, m.mes_apuracao, u.total_ucs,
   coalesce(i.uc_horas_interrompidas, 0) AS uc_horas_interrompidas,
   coalesce(i.uc_interrupcoes, 0) AS uc_interrupcoes,

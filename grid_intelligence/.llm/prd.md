@@ -1,112 +1,113 @@
-# Grid Intelligence — produto e regras de negocio
+# Grid Intelligence — product and business rules
 
-## Dominio
+## Domain
 
-A Luz do Vale Distribuidora S.A. e uma distribuidora ficticia de energia eletrica,
-regulada pela ANEEL. A plataforma conecta continuidade do fornecimento, Perdas Nao
-Tecnicas e atendimento ao cliente a decisoes operacionais e financeiras.
+Luz do Vale Distribuidora S.A. is a fictional electricity distribution utility,
+regulated by ANEEL. The platform connects supply continuity, non-technical losses
+and customer service to operational and financial decisions.
 
-Tres dores motivam o projeto: compensacoes por interrupcoes acima dos limites,
-energia distribuida e nao faturada e sinais antecipados de reclamacao na ouvidoria
-presentes nas transcricoes de atendimento.
+Three pain points motivate the project: compensation for interruptions above the
+regulatory limits, distributed and unbilled energy, and early signs of ombudsman
+complaints present in the service transcripts.
 
-Os valores de mais de R$ 1,1 bilhao em compensacoes em 2024 e aproximadamente
-R$ 11,5 bilhoes em perdas em 2025, com R$ 7,9 bilhoes repassados a tarifa, sao
-contexto fornecido pelo prompt. Nao sao resultados calculados no dataset.
+The figures of more than R$ 1.1 billion in compensation in 2024 and approximately
+R$ 11.5 billion in losses in 2025, with R$ 7.9 billion passed through to the tariff,
+are context provided by the prompt. They are not results computed from the dataset.
 
-## Glossario
+## Glossary
 
-| Termo | Definicao |
+| Term | Definition |
 |---|---|
-| UC — Unidade Consumidora | Ponto de entrega de energia. Um cliente pode ter varias UCs; UC nao e sinonimo de cliente. |
-| Conjunto | Subdivisao geografica da concessao e unidade de agregacao do regulador. |
-| DEC | Duracao Equivalente de Interrupcao por UC: tempo medio em horas sem fornecimento. |
-| FEC | Frequencia Equivalente de Interrupcao por UC: numero medio de interrupcoes. |
-| PNT | Perdas Nao Tecnicas. |
-| Prioridade de inspecao | Classificacao de quanto uma UC merece visita tecnica: alta, media ou baixa. |
+| UC | Electricity delivery point. One customer can have several UCs; UC is not a synonym for customer. |
+| District | Geographic subdivision of the concession area and the unit of aggregation for the regulator. |
+| DEC | Average interruption duration per UC (hours): average time without supply. |
+| FEC | Average interruption frequency per UC: average number of interruptions. |
+| PNT | Non-technical losses. |
+| Inspection priority | Classification of how much a UC warrants a technical visit: high, medium or low. |
 
-## Regras de negocio
+## Business rules (RN)
 
-O prompt 00 forneceu dez regras. Os prompts 02 e 04 completaram RN-02, RN-05 e RN-08.
-A RN-03 permanece reservada, sem inventar requisitos.
+Prompt 00 supplied ten rules. Prompts 02 and 04 completed RN-02, RN-05 and RN-08.
+RN-03 remains reserved, without inventing requirements.
 
-| Regra | Definicao |
+| Rule | Definition |
 |---|---|
-| RN-01 | Somente interrupcoes com duracao de 3 minutos ou mais entram em DEC e FEC. Aplicar na transformacao, nunca no relatorio. |
-| RN-02 | DEC = soma de duracao_horas vezes qtd_ucs_afetadas dividida pelo total de UCs do conjunto. FEC = soma de qtd_ucs_afetadas dividida pelo mesmo total. |
-| RN-03 | Nao fornecida no prompt 00; definicao pendente. |
-| RN-04 | DEC e FEC tem uma unica definicao, compartilhada por dashboard, agente e relatorio. |
-| RN-05 | A apuracao de continuidade e mensal por conjunto. DEC mensal e acumulado do periodo sao medidas distintas na metric view. |
-| RN-06 | Uma UC so e candidata a inspecao quando o consumo cai contra o proprio baseline enquanto a vizinhanca permanece estavel, simultaneamente. |
-| RN-07 | A saida e prioridade de inspecao alta, media ou baixa. Nunca usar fraude, furto ou culpado como rotulo de saida em coluna, variavel ou comentario. Mudanca de morador, imovel desocupado, defeito de medidor e erro de leitura tambem explicam quedas. |
-| RN-08 | Prioridade de inspecao usa regra explicavel, sem modelo supervisionado sem rotulo confiavel. Cada decisao expoe os dois eixos e os numeros que a sustentam. |
-| RN-09 | Mascarar dados pessoais das transcricoes antes de qualquer analise de conteudo. |
-| RN-10 | Preservar o texto original identificado com acesso restrito. Protecao na leitura e mascaramento para analise coexistem. |
-| RN-11 | A ingestao nao filtra, corrige ou aplica regra de negocio; leituras invalidas sao evidencias sobre o medidor. |
-| RN-12 | Todo registro ingerido carrega origem e momento de ingestao. |
-| RN-13 | O agente conversacional acessa apenas a camada de negocio. |
-| RN-14 | Entidades gold e a metric view levam descricoes em linguagem de negocio. Bronze e silver sao passagem e nao precisam de descricoes. |
+| RN-01 | Only interruptions lasting 3 minutes or more enter DEC and FEC. Apply in the transformation, never in the report. |
+| RN-02 | DEC = sum of duracao_horas times qtd_ucs_afetadas divided by the total number of UCs in the district. FEC = sum of qtd_ucs_afetadas divided by the same total. |
+| RN-03 | Not provided in prompt 00; definition pending. |
+| RN-04 | DEC and FEC have a single definition, shared by the dashboard, the agent and the report. |
+| RN-05 | Continuity assessment is monthly per district. Monthly DEC and the cumulative total for the period are distinct measures in the metric view. |
+| RN-06 | A UC is an inspection candidate only when its consumption falls against its own baseline while the neighborhood stays stable, both at the same time. |
+| RN-07 | The output is inspection priority high, medium or low. Never use fraud, theft or culprit as an output label in a column, variable or comment. Change of occupant, vacant property, meter defect and reading error also explain drops. |
+| RN-08 | Inspection priority uses an explainable rule, with no supervised model without a reliable label. Each decision exposes the two axes and the numbers behind it. |
+| RN-09 | Mask personal data in the transcripts before any content analysis. |
+| RN-10 | Preserve the identified original text under restricted access. Read protection and masking for analysis coexist. |
+| RN-11 | Ingestion does not filter, correct or apply business rules; invalid readings are evidence about the meter. |
+| RN-12 | Every ingested record carries its origin and ingestion timestamp. |
+| RN-13 | The conversational agent accesses only the business layer. |
+| RN-14 | Gold entities and the metric view carry descriptions in business language. Bronze and silver are transient and do not need descriptions. |
 
-## Modelo de informacao
+## Information model
 
-Metadados conferidos nos Parquet locais durante o setup, sem alterar os arquivos.
-As chaves indicam o grao logico; defeitos propositais podem gerar duplicatas.
+Metadata checked against the local Parquet files during setup, without modifying the
+files. The keys indicate the logical grain; deliberate defects may produce duplicates.
 
-| Base | Grao e volume | Atributos |
+| Base | Grain and volume | Attributes |
 |---|---|---|
-| unidades_consumidoras | Uma por ponto de entrega; 4.000 registros | id_uc, id_cliente, id_conjunto, nome_conjunto, municipio, bairro, logradouro, classe_consumo, subgrupo_tarifario, tensao_nominal_v, situacao, data_ligacao, possui_medidor_inteligente, consumo_medio_kwh_dia, latitude, longitude, origem, ingerido_em |
-| interrupcoes | Um evento de rede; 1.383 registros | id_interrupcao, id_conjunto, inicio, fim, duracao_minutos, tipo, causa, equipamento, qtd_ucs_afetadas, origem, ingerido_em |
-| consumo_diario | Uma UC por dia; 5.854.587 registros fisicos | id_uc, data, consumo_kwh, horas_com_leitura, sinal_violacao_medidor, origem, ingerido_em |
-| chamados | Uma ligacao; 2.801 registros | id_chamado, id_uc, abertura, canal, nome_solicitante, telefone_solicitante, transcricao, duracao_segundos, origem, ingerido_em |
+| unidades_consumidoras | One per electricity delivery point; 4,000 records | id_uc, id_cliente, id_conjunto, nome_conjunto, municipio, bairro, logradouro, classe_consumo, subgrupo_tarifario, tensao_nominal_v, situacao, data_ligacao, possui_medidor_inteligente, consumo_medio_kwh_dia, latitude, longitude, origem, ingerido_em |
+| interrupcoes | One grid event; 1,383 records | id_interrupcao, id_conjunto, inicio, fim, duracao_minutos, tipo, causa, equipamento, qtd_ucs_afetadas, origem, ingerido_em |
+| consumo_diario | One UC per day; 5,854,587 physical records | id_uc, data, consumo_kwh, horas_com_leitura, sinal_violacao_medidor, origem, ingerido_em |
+| chamados | One call; 2,801 records | id_chamado, id_uc, abertura, canal, nome_solicitante, telefone_solicitante, transcricao, duracao_segundos, origem, ingerido_em |
 
-UCs se relacionam a clientes por id_cliente e a conjuntos por id_conjunto.
-Consumo e chamados se relacionam a UCs por id_uc; interrupcoes se relacionam a
-conjuntos por id_conjunto. Um evento de conjunto nao informa quais UCs individuais
-foram afetadas: qtd_ucs_afetadas representa a abrangencia registrada.
+UCs relate to customers by id_cliente and to districts by id_conjunto.
+Consumption and service calls relate to UCs by id_uc; interruptions relate to
+districts by id_conjunto. A district event does not say which individual UCs were
+affected: qtd_ucs_afetadas represents the registered scope of impact.
 
-O historico informado cobre quatro anos, com crescimento de 30% ao ano na carga e
-sazonalidade de verao no atendimento: dezembro a marco recebe quase o dobro de ligacoes.
-Consumo nulo, negativo, fisicamente impossivel, duplicatas e interrupcoes abaixo de
-tres minutos sao defeitos propositais, preservados na ingestao.
+The stated history covers four years, with 30% year-over-year growth in load and
+summer seasonality in service: December to March receives almost twice as many calls.
+Null, negative and physically impossible consumption, duplicates and interruptions
+under three minutes are deliberate defects, preserved during ingestion.
 
-## Quatro entregas de negocio previstas
+## Four planned business deliverables
 
-1. Continuidade por conjunto: DEC/FEC em definicao unica, para acompanhamento do
-   fornecimento e do risco de compensacao. Formulas detalhadas e limites serao
-   definidos nas etapas silver e gold.
-2. Prioridade de inspecao por UC: cruzar queda contra baseline proprio e estabilidade
-   da vizinhanca para orientar visitas tecnicas, sem atribuir culpa.
-3. Inteligencia de atendimento: analisar transcricoes mascaradas para identificar
-   motivos e sinais de insatisfacao, preservando o original restrito.
-4. Visao executiva integrada: reunir continuidade, inspecoes e atendimento na gold,
-   consumida por painel AI/BI, copiloto em portugues e relatorio executivo.
+1. Continuity by district: DEC/FEC under a single definition, to track supply and
+   compensation risk. Detailed formulas and thresholds will be defined in the
+   silver and gold stages.
+2. Inspection priority per UC: cross the drop against the UC's own baseline and the
+   stability of the neighborhood to guide technical visits, without assigning blame.
+3. Service intelligence: analyze masked transcripts to identify reasons and signs of
+   dissatisfaction, preserving the restricted original.
+4. Integrated executive view: bring continuity, inspections and service together in
+   gold, consumed by an AI/BI dashboard, a Portuguese-language copilot and an
+   executive report.
 
-## Arquitetura e convencoes
+## Architecture and conventions
 
-- Isolamento por catalogo, configurado em databricks.yml via ${var.catalog}.
-- Schemas raw, bronze, silver e gold declarados uma vez nos recursos do bundle;
-  referencias posteriores usam ${resources.schemas.<camada>.name}.
-- Volume managed landing na raw; uma pasta por base, inicialmente um Parquet por pasta.
-- Bronze preserva os fatos; silver trata numeros e texto; gold publica produtos
-  de negocio e a metric view compartilhada de DEC/FEC.
-- Os schemas mantem os mesmos nomes em dev e prod, sem prefixo do usuario.
-- Tabelas nao repetem o prefixo da camada no nome.
-- CLI sempre com --profile grid_intelligence; dev e o destino padrao.
-- Textos em portugues do Brasil; nomes de entidades, colunas e arquivos sem acentuacao.
-- Sem nome fixo de modelo de IA: usar funcoes ai_* nas etapas que precisarem de IA.
-- Sem expectations, CONSTRAINT, COMMENT em bronze/silver, TBLPROPERTIES ou CLUSTER BY,
-  salvo se alguma configuracao for indispensavel ao funcionamento.
-- Preferir SELECT direto e regras em WHERE; CTE apenas quando simplificar a leitura.
-- Comentar apenas decisoes nao obvias, como o limiar regulatorio de tres minutos.
-- Nao acrescentar validacoes sem discutir com o usuario.
-- Nao sincronizar os Parquet pelo bundle; originais identificados exigem acesso restrito.
+- Isolation by catalog, configured in databricks.yml via ${var.catalog}.
+- Schemas raw, bronze, silver and gold declared once in the bundle resources;
+  later references use ${resources.schemas.<camada>.name}.
+- Managed landing volume in raw; one folder per base, initially one Parquet per folder.
+- Bronze preserves the facts; silver handles numbers and text; gold publishes
+  business products and the shared DEC/FEC metric view.
+- Schemas keep the same names in dev and prod, with no user prefix.
+- Tables do not repeat the layer prefix in their name.
+- CLI always with --profile grid_intelligence; dev is the default target.
+- Text in Brazilian Portuguese; entity, column and file names without accents.
+- No fixed AI model name: use ai_* functions in the stages that need AI.
+- No expectations, CONSTRAINT, COMMENT in bronze/silver, TBLPROPERTIES or CLUSTER BY,
+  unless some configuration is indispensable for it to work.
+- Prefer direct SELECT and rules in WHERE; CTE only when it simplifies reading.
+- Comment only non-obvious decisions, such as the three-minute regulatory threshold.
+- Do not add validations without discussing them with the user.
+- Do not sync the Parquet files through the bundle; identified originals require restricted access.
 
-## Escopo e sequencia
+## Scope and sequence
 
-Nesta etapa: criar os dois catalogos e permissoes do usuario; declarar quatro schemas
- e o volume; validar e publicar somente dev. Prod fica configurado, com catalogo
-criado, sem deploy de schemas. Nao criar tabelas, transformacoes, dashboard ou agente.
-O upload dos Parquet sera realizado pelo usuario, separadamente.
+In this stage: create the two catalogs and the user permissions; declare four schemas
+ and the volume; validate and publish only dev. Prod stays configured, with the catalog
+created, without deploying schemas. Do not create tables, transformations, dashboard or agent.
+The Parquet upload will be carried out by the user, separately.
 
-Sequencia: 01 bronze; 02 silver numeros; 03 silver texto (IA ou regex);
-04 gold e metric view; 05 dashboard; 06 agente; 07 relatorio e demonstracao.
+Sequence: 01 bronze; 02 silver numbers; 03 silver text (AI or regex);
+04 gold and metric view; 05 dashboard; 06 agent; 07 report and demo.

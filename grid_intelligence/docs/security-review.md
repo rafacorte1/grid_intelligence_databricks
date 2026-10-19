@@ -27,19 +27,16 @@ workspace metadata must also be removed, agree on a separate history-cleanup pla
 before rewriting shared branches. If a real credential is ever discovered,
 revoke/rotate it first; deleting it from Git is insufficient.
 
-## Safe LinkedIn material
+## Material safe to share publicly
 
-Use the architecture diagram, aggregate synthetic dataset counts, engineering
-tradeoffs and a link to the public repository. State that the company and dataset
-are fictional and that the deployment is a development demonstration.
+Use the architecture diagram, aggregate synthetic dataset counts and engineering tradeoffs.
+State that the company and dataset are fictional and that the deployment is a development
+demonstration.
 
 Do not include raw transcripts, input Parquet, terminal authentication output,
 workspace/profile configuration, private execution links, conversation payloads,
 customer-level exports, account menus, user emails or unreviewed screenshots.
 Even synthetic identifier-like data is unnecessary for the technical story.
-
-The English post is a draft for owner review. No LinkedIn post or message has
-been sent. No external service permissions were broadened for publication.
 
 ## Recheck before publishing
 

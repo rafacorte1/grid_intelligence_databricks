@@ -1,106 +1,107 @@
-# Prompt 03-B — Silver: o texto, sem IA
+# Prompt 03-B — Silver: the text, without AI
 
-> **Prompt 4 de 8, rota determinística.** Substitui o `03-silver-texto-ia.md`. Requer a
-> silver numérica pronta. Escolha **um dos dois** — os prompts seguintes funcionam igual
-> nos dois casos.
+> **Prompt 4 of 8, deterministic route.** Replaces `03-silver-texto-ia.md`. Requires the
+> numeric silver to be ready. Pick **one of the two** — the prompts that follow work the same
+> on either route.
 
 ---
 
-Leia `.llm/prd.md`, inclusive a **diretriz de simplicidade**. Agora a parte da silver que
-lida com **texto livre**: as transcrições das ligações para a central de atendimento. Aqui elas são tratadas sem nenhuma chamada a
-modelo — só SQL: expressão regular, `CASE` e agregação.
+Read `.llm/prd.md`, including the **simplicity guideline**. Now the part of silver that deals
+with **free text**: the transcripts of calls to the service center. Here they are handled with
+no model call at all — only SQL: regular expression, `CASE` and aggregation.
 
-## O que este prompt cria
+## What this prompt creates
 
-As mesmas tabelas da rota com IA, com o mesmo schema:
+The same tables as the AI route, with the same schema:
 
-| Arquivo | Cria | Tipo | Grão |
+| File | Creates | Type | Grain |
 |---|---|---|---|
-| `src/pipelines/grid_intelligence/transformations/13_silver_chamados.sql` | `silver.chamados_anonimizados` | materialized view | um chamado |
-| o mesmo arquivo | `silver.chamados_enriquecidos` | materialized view | um chamado |
-| `src/sql/governanca_dado_pessoal.sql` | column mask sobre `bronze.chamados` | task de SQL do job | — |
+| `src/pipelines/grid_intelligence/transformations/13_silver_chamados.sql` | `silver.chamados_anonimizados` | materialized view | one service call |
+| the same file | `silver.chamados_enriquecidos` | materialized view | one service call |
+| `src/sql/governanca_dado_pessoal.sql` | column mask on `bronze.chamados` | SQL task of the job | — |
 
-São 2.801 chamados. Aqui o arquivo pode ser **`.sql`**, e não `.py` como na rota com IA: sem
-função de IA para desviar por configuração, não há motivo para o `if` em Python.
+There are 2,801 service calls. Here the file can be **`.sql`**, not `.py` as in the AI route: with no
+AI function to route around through configuration, there is no reason for the Python `if`.
 
-## Por que existe uma rota determinística
+## Why a deterministic route exists
 
-Cada função de IA é **uma inferência por linha**. Com 2.801 chamados e quatro funções na
-cadeia, são ~11 mil chamadas ao modelo — o suficiente para uma execução levar dezenas de
-minutos e travar uma aula ao vivo. E o PRD exige (RF-09) que o projeto funcione em
-workspace onde as funções de IA não estão disponíveis.
+Every AI function is **one inference per row**. With 2,801 service calls and four functions in the
+chain, that is ~11 thousand model calls — enough to make a run take dozens of
+minutes and stall a live class. And the PRD requires (RF-09) that the project work in a
+workspace where the AI functions are not available.
 
-| | `03-silver-texto-ia` | Este prompt |
+| | `03-silver-texto-ia` | This prompt |
 |---|---|---|
-| Tempo | dezenas de minutos | segundos |
-| Anonimização | entende o texto; pega nome escrito de qualquer jeito | pega o que casa com o padrão |
-| Motivo do chamado | classifica por significado | classifica por palavra-chave |
-| Reprodutibilidade | varia entre execuções | **idêntica sempre** |
-| Custo | tokens | zero |
+| Time | dozens of minutes | seconds |
+| Anonymization | understands the text; catches a name however it is written | catches what matches the pattern |
+| Reason for the call | classifies by meaning | classifies by keyword |
+| Reproducibility | varies between runs | **identical every time** |
+| Cost | tokens | zero |
 
-**Não é um downgrade em tudo.** Determinismo é vantagem real: a mesma entrada dá a mesma
-saída, sempre — o que torna o resultado testável, e a aula previsível.
+**It is not a downgrade on every count.** Determinism is a real advantage: the same input gives the
+same output, always — which makes the result testable, and the class predictable.
 
-## Duas camadas, nesta ordem, e a ordem importa
+## Two layers, in this order, and the order matters
 
-1. **Anonimizar** (RN-09) — o texto perde nome, CPF e telefone
-2. **Enriquecer** (RF-05) — sentimento, motivo, urgência e equipamento saem do texto **já
-   anonimizado**
+1. **Anonymize** (RN-09) — the text loses name, CPF and phone number
+2. **Enrich** (RF-05) — sentiment, reason, urgency and equipment come out of the text **already
+   anonymized**
 
-Inverter isso mandaria dado pessoal identificado para a análise de conteúdo sem
-necessidade nenhuma: sentimento e motivo do chamado não dependem do nome de quem ligou.
-A chave da UC já identifica a unidade.
+Inverting this would send identified personal data into the content analysis with
+no need for it at all: the sentiment and the reason for the service call do not depend on the name
+of whoever called.
+The UC key already identifies the delivery point.
 
-## 1. `silver.chamados_anonimizados` — regex no lugar de `ai_mask`
+## 1. `silver.chamados_anonimizados` — regex in place of `ai_mask`
 
-**Isto resolve a RN-09.** Sem esta tabela, qualquer análise de conteúdo lê texto
-identificado.
+**This is what satisfies RN-09.** Without this table, any content analysis reads identified text.
 
-Três padrões, aplicados em sequência sobre `transcricao`:
+Three patterns, applied in sequence over `transcricao`:
 
 ```sql
 regexp_replace(
   regexp_replace(
     replace(transcricao, nome_solicitante, '[MASCARADO]'),
-    '[0-9]{3}\\.[0-9]{3}\\.[0-9]{3}-[0-9]{2}',            -- CPF formatado
+    '[0-9]{3}\\.[0-9]{3}\\.[0-9]{3}-[0-9]{2}',            -- formatted CPF
     '[MASCARADO]'),
-  '\\([0-9]{2}\\)\\s*9?[0-9]{4}-?[0-9]{4}',               -- telefone com DDD
+  '\\([0-9]{2}\\)\\s*9?[0-9]{4}-?[0-9]{4}',               -- phone with area code
   '[MASCARADO]') AS transcricao_anonimizada
 ```
 
-Por que essa ordem: o **nome sai primeiro**, usando a coluna `nome_solicitante` do próprio
-registro — é a informação que o regex sozinho não pegaria, porque nome não tem formato. Os
-outros dois têm padrão fixo e saem depois.
+Why this order: **the name goes first**, using the `nome_solicitante` column of the record
+itself — that is the information a regex alone would not catch, because a name has no format. The
+other two have a fixed pattern and go afterwards.
 
-**A chave da UC fica.** `UC0001147` identifica a unidade consumidora, não a pessoa — e a
-análise precisa dela para juntar com o cadastro.
+**The UC key stays.** `UC0001147` identifies the delivery point, not the person — and the
+analysis needs it to join with the registry.
 
-Traga do cadastro: cliente, conjunto, bairro e classe da UC. Derive data e hora do chamado.
+Bring in from the registry: customer, district, neighborhood and class of the UC. Derive the date and
+time of the service call.
 
-Valide contra o dataset: das 2.801 transcrições, **todas** carregam o nome do solicitante,
-1.684 têm CPF e 1.819 têm telefone. Depois da anonimização, uma busca por
-`[0-9]{3}\.[0-9]{3}\.[0-9]{3}-[0-9]{2}` tem de voltar **zero**.
+Validate against the dataset: of the 2,801 transcripts, **all** of them carry the requester's name,
+1,684 have a CPF and 1,819 have a phone number. After anonymization, a search for
+`[0-9]{3}\.[0-9]{3}\.[0-9]{3}-[0-9]{2}` must return **zero**.
 
-## 2. `silver.chamados_enriquecidos` — `CASE` no lugar de `ai_classify`
+## 2. `silver.chamados_enriquecidos` — `CASE` in place of `ai_classify`
 
-As mesmas colunas da rota com IA, derivadas por regra:
+The same columns as the AI route, derived by rule:
 
-| Coluna | Como derivar |
+| Column | How to derive it |
 |---|---|
-| `sentimento` | `negative` se o texto casa com termos de insatisfação; `positive` com termos de agradecimento; senão `neutral` |
-| `motivo` | `CASE` encadeado — a **ordem importa**, ver abaixo |
-| `equipamento_citado` | `regexp_extract` com alternação dos equipamentos conhecidos |
-| `risco_a_saude` | termo de risco no texto: oxigênio, diálise, remédio, criança, hospital, faísca, incêndio, idoso |
-| `urgencia` | alta se há risco à saúde; média para falta de energia, religação urgente, poste avariado; baixa no resto |
-| `ameacou_ouvidoria` | ouvidoria, ANEEL, Procon ou processo |
+| `sentimento` | `negative` if the text matches dissatisfaction terms; `positive` with thanking terms; otherwise `neutral` |
+| `motivo` | chained `CASE` — **order matters**, see below |
+| `equipamento_citado` | `regexp_extract` with an alternation of the known equipment |
+| `risco_a_saude` | risk term in the text: oxygen, dialysis, medication, child, hospital, spark, fire, elderly |
+| `urgencia` | high if there is a health risk; medium for an outage, urgent reconnection, damaged pole; low for the rest |
+| `ameacou_ouvidoria` | ombudsman, ANEEL, Procon or lawsuit |
 
-**A ordem do `CASE` é a regra de negócio.** Um texto pode casar com vários padrões, e o
-primeiro que casar vence. Coloque o mais específico antes do mais genérico:
+**The order of the `CASE` is the business rule.** A text can match several patterns, and the
+first one that matches wins. Put the most specific before the most generic:
 
 ```sql
 CASE
-  -- risco a saude vem ANTES de religacao comum: e a mesma frase
-  -- com uma pessoa em risco no meio
+  -- health risk comes BEFORE ordinary reconnection: it is the same sentence
+  -- with a person at risk in the middle
   WHEN texto RLIKE '(?i)dialise|oxigenio|remedio na geladeira|crianca pequena'
     THEN 'religacao_urgente'
   WHEN texto RLIKE '(?i)escuro|sem energia|apagou|falta de energia|sem luz'
@@ -119,69 +120,69 @@ CASE
 END AS motivo
 ```
 
-Use `(?i)` para ignorar maiúsculas, e **teste sem acento**: as transcrições foram geradas
-sem acentuação em boa parte das falas.
+Use `(?i)` to ignore case, and **test without accents**: the transcripts were generated
+without accentuation, so much of the speech has none.
 
-Grave `anonimizado_por = 'regras_de_texto'` e `enriquecido_por = 'regras_de_texto'` em cada
-linha. Quem consulta a tabela precisa saber com o que está lidando — e é isso que permite
-comparar as duas rotas depois, se você rodar a versão com IA em paralelo.
+Write `anonimizado_por = 'regras_de_texto'` and `enriquecido_por = 'regras_de_texto'` on every
+row. Whoever queries the table needs to know what they are dealing with — and that is what lets you
+compare the two routes later, if you run the AI version in parallel.
 
-**As colunas produzidas são as mesmas nas duas rotas.** Muda a qualidade da extração, não
-o schema — é por isso que o gold, o dashboard e o agente não precisam saber qual rota você
-escolheu.
+**The columns produced are the same on both routes.** What changes is the quality of the
+extraction, not the schema — which is why gold, the dashboard and the agent do not need to know which route
+you chose.
 
-## 3. RN-10 — a outra metade da proteção
+## 3. RN-10 — the other half of the protection
 
-A RN-09 protegeu a análise. Falta proteger a leitura da origem, e **isso não muda de rota**:
-não depende de IA nenhuma.
+RN-09 protected the analysis. The read from the source is still unprotected, and **that does not change
+with the route**: it depends on no AI at all.
 
-Crie uma **column mask** do Unity Catalog: uma função que devolve o valor original para
-membros do grupo de atendimento e `[RESTRITO]` para todo o resto. Aplique nas colunas
-`nome_solicitante`, `telefone_solicitante` e `transcricao` de `bronze.chamados`.
+Create a Unity Catalog **column mask**: a function that returns the original value to
+members of the customer service group and `[RESTRITO]` to everyone else. Apply it to the columns
+`nome_solicitante`, `telefone_solicitante` and `transcricao` of `bronze.chamados`.
 
-Quem está no atendimento vê o telefone do cliente — precisa dele para retornar a ligação.
-Todo o resto não vê.
+Whoever is in customer service sees the customer's phone number — they need it to call back.
+Everyone else does not.
 
-**Atenção:** `bronze.chamados` é materializada pelo pipeline, e um full refresh recria a
-tabela e derruba a máscara. Ponha isso numa task do job que roda **depois** do pipeline, a
-cada execução, e deixe a limitação escrita em comentário.
+**Watch out:** `bronze.chamados` is materialized by the pipeline, and a full refresh recreates the
+table and drops the mask. Put this in a job task that runs **after** the pipeline, on
+every run, and leave the limitation written down in a comment.
 
-## 4. Onde esta rota perde — e o que fazer com isso
+## 4. Where this route falls short — and what to do about it
 
-Deixe registrado **em comentário no topo do arquivo** que a extração é por regra, não por
-modelo, e o que ela não pega:
+Record **in a comment at the top of the file** that the extraction is by rule, not by
+model, and what it does not catch:
 
-- **Ironia e negação.** *"Que ótimo, mais um dia sem luz"* vira `positive`.
-- **Sinônimo fora da lista.** *"tá tudo apagado"* pega; *"fiquei no breu"* não.
-- **Motivo composto.** Quem liga por falta de energia **e** conta alta recebe um rótulo só.
-- **Nome escrito diferente da coluna.** Se o cliente se apresenta com apelido, o regex do
-  nome não casa — e o texto passa identificado.
+- **Irony and negation.** *"Great, another day without power"* becomes `positive`.
+- **A synonym outside the list.** *"it's all dark"* is caught; *"I was left in the pitch black"* is not.
+- **Composite reason.** Someone who calls about an outage **and** a high bill gets a single label.
+- **A name written differently from the column.** If the customer introduces themselves with a nickname, the
+  name regex does not match — and the text goes through identified.
 
-O último é o mais sério, porque é risco de LGPD e não de qualidade. Meça: conte quantas
-transcrições anonimizadas ainda contêm o primeiro nome do solicitante e me diga o número.
+The last one is the most serious, because it is an LGPD risk, not a quality risk. Measure it: count how many
+anonymized transcripts still contain the requester's first name and tell me the number.
 
-## O que não fazer agora
+## What not to do now
 
-**Não construa a camada gold.** Ela é o prompt 04 e não muda entre as rotas: consome
-`chamados_enriquecidos` sem saber como as colunas foram preenchidas.
+**Do not build the gold layer.** It is prompt 04 and it does not change between routes: it consumes
+`chamados_enriquecidos` without knowing how the columns were filled.
 
-## Ao terminar
+## When you finish
 
-1. Rode o pipeline e me mostre o tempo total de execução
-2. Uma transcrição antes e depois da anonimização, lado a lado
-3. A distribuição de `motivo` e `sentimento`
-4. A busca por CPF e telefone na tabela anonimizada — tem de voltar zero
-5. Quantas transcrições ainda contêm o nome do solicitante
-6. O resultado de consultar `bronze.chamados` — as colunas mascaradas devem aparecer como
-   `[RESTRITO]`, a menos que você esteja no grupo
+1. Run the pipeline and show me the total execution time
+2. One transcript before and after anonymization, side by side
+3. The distribution of `motivo` and `sentimento`
+4. The search for CPF and phone number in the anonymized table — it must return zero
+5. How many transcripts still contain the requester's name
+6. The result of querying `bronze.chamados` — the masked columns must show as
+   `[RESTRITO]`, unless you are in the group
 
-## Critério de aceite
+## Acceptance criteria
 
-- Nenhuma chamada a função de IA nesta etapa
-- O enriquecimento lê o texto anonimizado, nunca o original
-- Nenhum CPF ou telefone sobrevive em `chamados_anonimizados`
-- As colunas de `chamados_enriquecidos` são as mesmas da rota com IA — o gold não sabe a diferença
-- `anonimizado_por` e `enriquecido_por` valem `'regras_de_texto'` em toda linha
-- O comentário no topo do arquivo declara as limitações da extração por regra
-- A column mask está aplicada e funciona
-- Duas execuções seguidas produzem resultado idêntico
+- No AI function call in this step
+- The enrichment reads the anonymized text, never the original
+- No CPF or phone number survives in `chamados_anonimizados`
+- The columns of `chamados_enriquecidos` are the same as the AI route's — gold cannot tell the difference
+- `anonimizado_por` and `enriquecido_por` equal `'regras_de_texto'` on every row
+- The comment at the top of the file states the limitations of rule-based extraction
+- The column mask is applied and works
+- Two consecutive runs produce an identical result

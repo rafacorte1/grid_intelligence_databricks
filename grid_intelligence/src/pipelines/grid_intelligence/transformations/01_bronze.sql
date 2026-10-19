@@ -1,7 +1,7 @@
--- Cada base ocupa um arquivo, sobrescrito quando o dataset e regerado.
--- allowOverwrites => true reprocessaria o arquivo alterado, mas a streaming table
--- e append-only: as linhas antigas permanecem e o volume dobra.
--- Depois de regerar o dataset, executar o pipeline com full refresh.
+-- Each source lands as a single file, overwritten whenever the dataset is regenerated.
+-- allowOverwrites => true would reprocess the changed file, but the streaming table is
+-- append-only: old rows stay put and the row count doubles.
+-- After regenerating the dataset, run the pipeline with a full refresh.
 
 CREATE OR REFRESH STREAMING TABLE ${catalogo}.${schema_bronze}.unidades_consumidoras
 TBLPROPERTIES ('delta.feature.timestampNtz' = 'supported')
