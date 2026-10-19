@@ -1,6 +1,6 @@
--- Extracao por regras, nao por modelo: ironia e negacao podem inverter sentimento.
--- Sinonimos fora da lista nao casam. Motivo composto recebe somente o primeiro rotulo.
--- Apelidos ou nomes diferentes da coluna podem permanecer identificados no texto.
+-- Rule-based extraction, not a model: irony and negation can flip sentiment.
+-- Synonyms outside the list do not match. A compound reason keeps only the first label.
+-- Nicknames, or names that differ from the column value, may remain identifiable in the text.
 CREATE OR REFRESH MATERIALIZED VIEW ${catalogo}.${schema_silver}.chamados_anonimizados
 TBLPROPERTIES ('delta.feature.timestampNtz' = 'supported')
 AS SELECT

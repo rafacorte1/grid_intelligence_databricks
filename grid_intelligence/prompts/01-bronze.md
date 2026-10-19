@@ -1,38 +1,38 @@
-# Prompt 01 — Camada bronze
+# Prompt 01 — Bronze layer
 
-> **Prompt 2 de 8.** Requer o prompt 00 concluído: schemas, volume e `.llm/prd.md` no lugar.
+> **Prompt 2 of 8.** Requires prompt 00 completed: schemas, volume and `.llm/prd.md` in place.
 
 ---
 
-Leia `.llm/prd.md` antes de começar, inclusive a **diretriz de simplicidade**. Agora vamos
-construir a **camada bronze** do medalhão da Grid Intelligence.
+Read `.llm/prd.md` before starting, including the **simplicity guideline**. Now we are going to
+build the **bronze layer** of the Grid Intelligence medallion.
 
-## O que quero
+## What I want
 
-Um **Lakeflow Declarative Pipeline serverless** que ingere as quatro bases do volume
-`raw.landing` para o schema `bronze`, uma tabela por base.
+A **serverless Lakeflow Declarative Pipeline** that ingests the four bases from the
+`raw.landing` volume into the `bronze` schema, one table per base.
 
-**Um arquivo só:** `src/pipelines/grid_intelligence/transformations/01_bronze.sql`, com as
-quatro tabelas. Elas compartilham o mesmo padrão de ingestão, e separar em quatro arquivos
-iguais só espalharia a mesma decisão por quatro lugares.
+**A single file:** `src/pipelines/grid_intelligence/transformations/01_bronze.sql`, with the
+four tables. They share the same ingestion pattern, and splitting them into four identical
+files would only spread the same decision across four places.
 
-| Origem no volume | Tabela bronze | Linhas esperadas |
+| Source in the volume | Bronze table | Expected rows |
 |---|---|---|
-| `unidades_consumidoras/` | `bronze.unidades_consumidoras` | 4.000 |
-| `interrupcoes/` | `bronze.interrupcoes` | 1.383 |
-| `consumo_diario/` | `bronze.consumo_diario` | ~5,85 milhões |
-| `chamados/` | `bronze.chamados` | 2.801 |
+| `unidades_consumidoras/` | `bronze.unidades_consumidoras` | 4,000 |
+| `interrupcoes/` | `bronze.interrupcoes` | 1,383 |
+| `consumo_diario/` | `bronze.consumo_diario` | ~5.85 million |
+| `chamados/` | `bronze.chamados` | 2,801 |
 
-Todas são **streaming table**: ingestão é append de arquivo novo, e é o que o Auto Loader
-sabe fazer de forma incremental.
+All of them are **streaming tables**: ingestion is an append of a new file, and that is what Auto Loader
+knows how to do incrementally.
 
-Use **Auto Loader** (`STREAM read_files`) com formato Parquet. Aponte para a **pasta**, não
-para o arquivo: hoje cada base ocupa um Parquet só, mas se uma delas precisar ser
-particionada amanhã, nada muda no pipeline.
+Use **Auto Loader** (`STREAM read_files`) with Parquet format. Point it at the **folder**, not
+at the file: today each base takes a single Parquet, but if one of them needs to be
+partitioned tomorrow, nothing changes in the pipeline.
 
-## O formato de cada tabela
+## The format of each table
 
-Quatro blocos iguais a este, e nada além disso:
+Four blocks identical to this one, and nothing beyond that:
 
 ```sql
 CREATE OR REFRESH STREAMING TABLE ${catalogo}.${schema_bronze}.interrupcoes
@@ -46,53 +46,53 @@ FROM STREAM read_files(
 );
 ```
 
-**Sem expectations, sem `CONSTRAINT`, sem `COMMENT`, sem `CLUSTER BY`.** A bronze é
-passagem: o que ela precisa fazer é copiar fielmente e dizer de onde veio.
+**No expectations, no `CONSTRAINT`, no `COMMENT`, no `CLUSTER BY`.** Bronze is a
+passage: what it has to do is copy faithfully and say where it came from.
 
-As duas colunas extras são a RN-12: `arquivo_origem` e `ingerido_bronze_em`. As colunas
-`origem` e `ingerido_em` que já vêm do dado dizem de que *sistema* ele saiu; estas duas
-dizem por onde ele *entrou* aqui.
+The two extra columns are RN-12: `arquivo_origem` and `ingerido_bronze_em`. The columns
+`origem` and `ingerido_em` that already come from the data say which *system* it came out of; these two
+say through which path it *entered* here.
 
-## A regra que manda neste arquivo: RN-11
+## The rule that governs this file: RN-11
 
-**A ingestão não aplica regra de negócio, não filtra e não corrige.**
+**Ingestion does not apply a business rule, does not filter and does not correct.**
 
-Consumo negativo, leitura impossível, interrupção de 40 segundos, cadastro com bairro
-vazio — tudo entra exatamente como chegou. Filtrar aqui pareceria limpeza; é destruição de
-evidência. Quem descarta é a silver, com regra nomeada e visível no `WHERE`.
+Negative consumption, an impossible reading, a 40-second interruption, a registry entry with an empty
+district — everything enters exactly as it arrived. Filtering here would look like cleaning; it is destruction of
+evidence. Silver is what discards, with a named rule visible in the `WHERE`.
 
-O `SELECT *` acima não é preguiça: é a RN-11 escrita em código. Qualquer coluna que você
-listasse à mão seria uma decisão sobre o que vale a pena guardar — e essa decisão não é da
-bronze.
+The `SELECT *` above is not laziness: it is RN-11 written in code. Any column you
+listed by hand would be a decision about what is worth keeping — and that decision is not
+bronze's.
 
-## Parametrização
+## Parameterization
 
-O pipeline recebe por `configuration`: catálogo, nome de cada schema, caminho do volume e
-o limiar de duração mínima de interrupção. **Nenhum nome de catálogo escrito dentro do
-SQL** — os arquivos usam `${catalogo}.${schema_bronze}.<tabela>`, e o valor vem do
+The pipeline receives through `configuration`: catalog, the name of each schema, the volume path and
+the minimum interruption duration threshold. **No catalog name written inside the
+SQL** — the files use `${catalogo}.${schema_bronze}.<tabela>`, and the value comes from
 `databricks.yml`.
 
-## Uma armadilha que quero registrada em comentário
+## A trap I want recorded in a comment
 
-Cada base ocupa um único arquivo, que é sobrescrito quando o dataset é regerado.
-`allowOverwrites => true` faz o Auto Loader reprocessar o arquivo trocado, mas **streaming
-table é append-only**: as linhas antigas continuam lá e o volume dobra. Deixe isso escrito
-no topo do arquivo, junto com a solução — rodar o pipeline com **full refresh** depois de
-regerar.
+Each base takes a single file, which is overwritten when the dataset is regenerated.
+`allowOverwrites => true` makes Auto Loader reprocess the swapped file, but a **streaming
+table is append-only**: the old rows stay there and the volume doubles. Leave that written
+at the top of the file, together with the solution — running the pipeline with a **full refresh** after
+regenerating.
 
-## Se o pipeline falhar com `DELTA_FEATURE_REQUIRES_MANUAL_ENABLEMENT: timestampNtz`
+## If the pipeline fails with `DELTA_FEATURE_REQUIRES_MANUAL_ENABLEMENT: timestampNtz`
 
-Vai acontecer. Os timestamps do dataset são **sem fuso horário** (`TIMESTAMP_NTZ`), e o
-Delta exige habilitar essa feature explicitamente na tabela.
+It will happen. The dataset timestamps are **without a time zone** (`TIMESTAMP_NTZ`), and
+Delta requires this feature to be enabled explicitly on the table.
 
-Há duas saídas, e uma delas está errada:
+There are two ways out, and one of them is wrong:
 
-- **Converter para `TIMESTAMP` na ingestão** — assumiria um fuso que o dado não declara.
-  Isso é transformação dentro da bronze, exatamente o que a RN-11 proíbe.
-- **Habilitar a feature na tabela** — o tipo entra como chegou, e quem decide o fuso é a
-  silver, se precisar.
+- **Convert to `TIMESTAMP` at ingestion** — it would assume a time zone that the data does not declare.
+  That is transformation inside bronze, exactly what RN-11 forbids.
+- **Enable the feature on the table** — the type enters as it arrived, and whoever decides the time zone is
+  silver, if it needs to.
 
-Use a segunda. É a única exceção à regra de não usar `TBLPROPERTIES`:
+Use the second. It is the only exception to the rule of not using `TBLPROPERTIES`:
 
 ```sql
 CREATE OR REFRESH STREAMING TABLE ${catalogo}.${schema_bronze}.interrupcoes
@@ -100,25 +100,26 @@ TBLPROPERTIES ('delta.feature.timestampNtz' = 'supported')
 AS SELECT ...
 ```
 
-## Se a bronze não ingerir nada
+## If bronze ingests nothing
 
-Antes de investigar o Auto Loader, confira a precisão dos timestamps do Parquet:
+Before investigating Auto Loader, check the timestamp precision of the Parquet:
 
 ```bash
 databricks experimental aitools tools query --profile grid_intelligence \
   "SELECT * FROM parquet.`/Volumes/grid_dev/raw/landing/interrupcoes/` LIMIT 1"
 ```
 
-Parquet gravado por pandas sem tratamento fica com `timestamp[ns]`, e **o Spark não lê
-nanossegundo**. O gerador deste projeto já converte para microssegundo; se o dado veio de
-outro lugar, é a primeira coisa a checar — a falha não é óbvia e parece problema de caminho.
+Parquet written by pandas without handling ends up as `timestamp[ns]`, and **Spark does not read
+nanoseconds**. This project's generator already converts to microseconds; if the data came from
+somewhere else, that is the first thing to check — the failure is not obvious and looks like a path
+problem.
 
-## Ao terminar
+## When you finish
 
 1. `databricks bundle deploy -t dev --profile grid_intelligence`
-2. Rode o pipeline e me mostre o resultado
-3. A contagem de linhas de cada tabela bronze
-4. **Quanto defeito entrou**, com uma query só — é o que a silver vai ter de resolver:
+2. Run the pipeline and show me the result
+3. The row count of each bronze table
+4. **How much defect came in**, with a single query — it is what silver will have to resolve:
 
 ```sql
 SELECT
@@ -128,13 +129,13 @@ SELECT
 FROM grid_dev.bronze.interrupcoes
 ```
 
-Deve voltar **1.383, 310 e 22,4%**. Esses 22,4% são exatamente o que a RN-01 vai descartar
-no próximo prompt — e é bom ver o número antes, para reconhecê-lo depois.
+It should return **1,383, 310 and 22.4%**. Those 22.4% are exactly what RN-01 will discard
+in the next prompt — and it is good to see the number beforehand, to recognize it later.
 
-## Critério de aceite
+## Acceptance criteria
 
-- As quatro tabelas bronze existem e têm o volume esperado
-- Nenhuma linha foi filtrada, corrigida ou descartada
-- Toda tabela tem `arquivo_origem` e `ingerido_bronze_em`
-- Nenhum nome de catálogo aparece dentro do SQL
-- Cada tabela cabe em uma tela
+- The four bronze tables exist and have the expected volume
+- No row was filtered, corrected or discarded
+- Every table has `arquivo_origem` and `ingerido_bronze_em`
+- No catalog name appears inside the SQL
+- Each table fits on one screen

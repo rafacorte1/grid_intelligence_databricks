@@ -1,7 +1,7 @@
 resources:
   dashboards:
     grid_intelligence_dashboard:
-      display_name: Grid Intelligence — Operacao e prioridades
+      display_name: Grid Intelligence — Operations and priorities
       file_path: ../src/dashboards/grid_intelligence.lvdash.json
       warehouse_id: ${var.warehouse_id}
       dataset_catalog: ${var.catalog}

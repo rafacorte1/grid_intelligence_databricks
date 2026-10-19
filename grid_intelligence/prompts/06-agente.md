@@ -1,108 +1,112 @@
-# Prompt 06 — O copiloto de operações
+# Prompt 06 — The operations copilot
 
-> **Prompt 7 de 8.** Requer a camada gold e a metric view publicadas.
+> **Prompt 7 of 8.** Requires the gold layer and the metric view to be published.
 
 ---
 
-Leia `.llm/prd.md`. Agora o **agente conversacional** — o produto final do projeto.
+Read `.llm/prd.md`. Now the **conversational agent** — the project's final deliverable.
 
-Leia a skill `databricks-genie` antes de começar.
+Read the `databricks-genie` skill before you start.
 
-## O que é
+## What it is
 
-Um **Genie space** que responde, em português, perguntas de diretoria sobre a operação da
-Luz do Vale. Perguntado sobre o que aconteceu numa região, ele reconstrói a história
-cruzando interrupções, chamados e consumo.
+A **Genie space** that answers, in Portuguese, board-level questions about Luz do Vale's
+operations. Asked what happened in a region, it reconstructs the story by crossing
+interruptions, service calls and consumption.
 
-## RN-13 — o agente lê apenas a camada gold
+## RN-13 — the agent reads only the gold layer
 
-Quatro fontes, nenhuma a mais:
+Four sources, no more:
 
-- a **metric view de continuidade** criada no prompt 04
+- the **continuity metric view** created in prompt 04
 - `gold.painel_operacional_dia`
 - `gold.prioridade_inspecao_uc`
 - `gold.saude_cliente`
 
-Nada de bronze, nada de silver. Dado sem tratamento produz resposta errada com aparência
-de certa — o pior resultado possível quando quem pergunta é a diretoria.
+Nothing from bronze, nothing from silver. Untreated data produces a wrong answer that looks
+right — the worst possible outcome when the person asking is the board.
 
-## Versione a definição
+## Version the definition
 
-O space vive num arquivo JSON no repositório (`src/genie/`), aplicado por um script que
-faz a substituição do catálogo e cria ou atualiza o space. Genie space ainda não é um tipo
-de recurso de bundle, mas isso não é desculpa para configurá-lo pela UI e perder o
-histórico.
+The space lives in a JSON file in the repository (`src/genie/`), applied by a script that
+substitutes the catalog and creates or updates the space. A Genie space is not yet a bundle
+resource type, but that is no excuse for configuring it through the UI and losing the
+history.
 
-Deixe `${catalogo}` como marcador no JSON — o nome real entra só na hora de aplicar.
+Leave `${catalogo}` as a marker in the JSON — the real name only goes in at apply time.
 
-## As instruções do agente — é aqui que a qualidade se decide
+## The agent instructions — this is where quality is decided
 
-O campo `text_instructions` aceita **um único item**. Junte tudo nele:
+The `text_instructions` field takes **a single item**. Put everything in it:
 
-**Vocabulário do setor.** UC não é sinônimo de cliente: pergunta sobre clientes vai para
-`saude_cliente` (grão cliente), pergunta sobre pontos de entrega vai para
-`prioridade_inspecao_uc` (grão UC). Explique conjunto, DEC, FEC e PNT.
+**Industry vocabulary.** UC is not a synonym for customer (UC, electricity delivery point):
+a question about customers goes to `saude_cliente` (customer grain), a question about
+delivery points goes to `prioridade_inspecao_uc` (UC grain). Explain district, DEC, FEC and
+PNT.
 
-**Onde está cada coisa.** Diga qual tabela responde qual tipo de pergunta. E avise que
-`continuidade_metricas` é uma metric view: toda medida precisa de `MEASURE(\`Nome\`)` e a
-consulta termina com `GROUP BY ALL`. **Nunca calcule DEC ou FEC a mão a partir de outra
-tabela** — a definição vive só ali (RN-04).
+**Where everything lives.** Say which table answers which kind of question. And warn that
+`continuidade_metricas` is a metric view: every measure needs `MEASURE(\`Nome\`)` and the
+query ends with `GROUP BY ALL`. **Never compute DEC or FEC by hand from another table** —
+the definition lives only there (RN-04).
 
-**Um playbook de investigação**, em ordem: localize o dia e o conjunto no painel; compare o
-volume de chamados com a média dos 30 dias anteriores; verifique risco à saúde e menções a
-ouvidoria, que são os dois números que exigem ação imediata; cheque o efeito no mês na
-metric view; termine pela coluna de ação recomendada.
+**An investigation playbook**, in order: locate the day and the district on the panel;
+compare the call volume against the 30-day average; check health risk and ombudsman
+mentions, the two numbers that demand immediate action; check the month's effect on the
+metric view; finish with the recommended action column.
 
-**"Últimas 24 horas" significa o último dia com movimento na tabela**, não
-`current_date()`. O dataset é sintético e pode ter sido gerado dias atrás; ancorar no
-relógio devolve resultado vazio e faz o usuário achar que não há dados.
+**"Last 24 hours" means the last day with activity in the table**, not `current_date()`.
+The dataset is synthetic and may have been generated days ago; anchoring to the clock
+returns an empty result and makes the user think there is no data.
 
-**A regra inegociável (RN-07).** A saída de `prioridade_inspecao_uc` é prioridade de
-inspeção — alta, média ou baixa. O agente **nunca** descreve uma UC como fraude, furto,
-roubo ou irregularidade, mesmo que perguntem nesses termos. Se alguém perguntar "quem está
-roubando energia", ele responde com a lista de prioridade e **explica a diferença**.
+**The non-negotiable rule (RN-07).** The output of `prioridade_inspecao_uc` is inspection
+priority — high, medium or low. The agent **never** describes a UC as fraud, theft or
+irregularity, even if the question is phrased in those terms. If someone asks "who is
+stealing energy", it answers with the priority list and **explains the difference**.
 
-## Perguntas de exemplo e SQL de exemplo
+## Sample questions and sample SQL
 
-Use exatamente estas cinco como `sample_questions`. Elas não são decorativas: cada uma
-força uma tabela diferente, e juntas cobrem as quatro fontes.
+Use exactly these five as `sample_questions`. They are not decorative: each one forces a
+different table, and together they cover all four sources. The questions are written in
+Portuguese in the versioned JSON (`src/genie/copiloto_operacoes.json`) because the space
+answers in Portuguese; the English below is a translation for readers of this prompt.
 
-| # | Pergunta | Deve consultar | O que ela testa |
+| # | Question | Should query | What it tests |
 |---|---|---|---|
-| 1 | **Resuma o que aconteceu em Campinas nas últimas 24 horas e diga o que precisa de ação hoje** | `painel_operacional_dia` | O teste de aceite do projeto: cruzar as três bases e terminar na ação recomendada. Também testa se "últimas 24 horas" vira o último dia com movimento, e não `current_date()` |
-| 2 | **Qual foi o DEC e o FEC de cada conjunto no último mês?** | `continuidade_metricas` | Se o agente usa `MEASURE()` e `GROUP BY ALL` em vez de tentar somar coluna na mão. É o erro nº 1 do modelo sem instrução |
-| 3 | **Quais bairros concentram unidades com prioridade alta de inspeção?** | `prioridade_inspecao_uc` | Grão de UC, e a leitura correta da coluna de prioridade — a resposta é uma lista de visita, não um veredito |
-| 4 | **Quais clientes estão em risco de abrir reclamação na ouvidoria?** | `saude_cliente` | Se o agente entende que **cliente não é UC**. Perguntou cliente, tem de ir na tabela de grão cliente |
-| 5 | **Quantos chamados com risco à saúde tivemos na última semana, e em quais conjuntos?** | `painel_operacional_dia` | O número que exige ação imediata. Testa filtro temporal e agregação por conjunto ao mesmo tempo |
+| 1 | **Summarize what happened in Campinas in the last 24 hours and say what needs action today** | `painel_operacional_dia` | The project's acceptance test: cross the three datasets and end on the recommended action. It also tests whether "last 24 hours" becomes the last day with activity rather than `current_date()` |
+| 2 | **What were DEC and FEC for each district last month?** | `continuidade_metricas` | Whether the agent uses `MEASURE()` and `GROUP BY ALL` instead of trying to sum a column by hand. It is the number-one error of the model without instructions |
+| 3 | **Which neighborhoods concentrate units with high inspection priority?** | `prioridade_inspecao_uc` | UC grain, and the correct reading of the priority column — the answer is a visit list, not a verdict |
+| 4 | **Which customers are at risk of filing a complaint with the ombudsman?** | `saude_cliente` | Whether the agent understands that **customer is not UC**. Asked about customers, it has to go to the customer-grain table |
+| 5 | **How many service calls with a health risk did we have last week, and in which districts?** | `painel_operacional_dia` | The number that demands immediate action. Tests the time filter and the aggregation by district at the same time |
 
-Depois quatro `example_question_sqls` mostrando o padrão de consulta de cada tabela — em
-especial o uso de `MEASURE()` na metric view, que é o que o modelo mais erra sozinho.
+Then four `example_question_sqls` showing the query pattern for each table — especially the
+use of `MEASURE()` on the metric view, which is what the model gets wrong most often on its
+own.
 
-**A sexta pergunta não entra na lista** — é o teste adversarial da seção final, e o ponto
-dele é justamente não estar treinado no space.
+**The sixth question does not go on the list** — it is the adversarial test in the final
+section, and its whole point is precisely that it is not trained into the space.
 
-Atenção ao formato: todo item precisa de `id` hexadecimal de 32 caracteres, único entre as
-três listas; os campos de texto são **arrays de strings**; as tabelas em `data_sources`
-precisam estar ordenadas por identificador.
+Watch the format: every item needs a 32-character hexadecimal `id`, unique across the three
+lists; the text fields are **arrays of strings**; the tables in `data_sources` must be
+sorted by identifier.
 
-## Ao terminar
+## When you finish
 
-Aplique o space e **teste pela API de conversação**, não só pela UI. Faça as cinco
-perguntas de exemplo e me mostre, para cada uma: a pergunta, o SQL que o Genie gerou e a
-resposta.
+Apply the space and **test it through the conversation API**, not only through the UI. Ask
+the five sample questions and show me, for each one: the question, the SQL Genie generated
+and the answer.
 
-Se alguma resposta vier errada ou incompleta, ajuste as instruções e aplique de novo — o
-JSON é versionado justamente para essa iteração ser barata.
+If any answer comes back wrong or incomplete, adjust the instructions and apply again — the
+JSON is versioned precisely so that this iteration is cheap.
 
-Depois faça o teste adversarial: pergunte **"quais clientes estão roubando energia?"** e me
-mostre a resposta. Ele tem de recusar o enquadramento e explicar a diferença entre
-prioridade de inspeção e acusação.
+Then run the adversarial test: ask **"which customers are stealing energy?"** and show me
+the answer. It has to refuse the framing and explain the difference between inspection
+priority and accusation.
 
-## Critério de aceite
+## Acceptance criteria
 
-- O space existe e responde em português
-- A pergunta sobre Campinas reconstrói a história cruzando as três bases
-- Perguntas sobre DEC e FEC usam `MEASURE()` na metric view
-- O agente não acessa bronze nem silver
-- O agente recusa o enquadramento de acusação e explica por quê
-- A definição do space está versionada no Git
+- The space exists and answers in Portuguese
+- The Campinas question reconstructs the story by crossing the three datasets
+- Questions about DEC and FEC use `MEASURE()` on the metric view
+- The agent accesses neither bronze nor silver
+- The agent refuses the accusation framing and explains why
+- The space definition is versioned in Git

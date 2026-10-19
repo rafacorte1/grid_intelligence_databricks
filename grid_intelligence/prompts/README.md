@@ -1,65 +1,63 @@
-# A sequência de 8 prompts
+# The prompt sequence
 
-Cada arquivo desta pasta é um **prompt pronto para colar no Claude Code**. Juntos, eles
-constroem a Grid Intelligence do zero — do catálogo vazio ao copiloto respondendo perguntas
-de diretoria.
+Each file in this folder is a **prompt ready to paste into Claude Code**. Together they
+build Grid Intelligence from scratch — from an empty catalog to the copilot answering
+board-level questions.
 
-| # | Arquivo | Entrega | Resultado visível |
+| # | File | Deliverable | Visible result |
 |---|---|---|---|
-| 00 | [`00-setup.md`](00-setup.md) | Contexto, regras de negócio, schemas e volume | Catálogo com as quatro camadas e os dados no volume |
-| 01 | [`01-bronze.md`](01-bronze.md) | Ingestão fiel | Quatro tabelas bronze e o painel de qualidade acusando os defeitos |
-| 02 | [`02-silver-numeros.md`](02-silver-numeros.md) | Cadastro, RN-01, dedup e baseline | Quantas interrupções a regra dos 3 minutos descartou |
-| 03-A | [`03-silver-texto-ia.md`](03-silver-texto-ia.md) | Anonimização e enriquecimento com IA | Transcrição antes e depois do mascaramento |
-| 03-B | [`03-silver-texto-regex.md`](03-silver-texto-regex.md) | **Ou:** o mesmo, com regex e `CASE` | As mesmas colunas, em segundos |
-| 04 | [`04-gold.md`](04-gold.md) | As quatro entregas e a metric view | DEC e FEC por conjunto, saindo de uma definição só |
-| 05 | [`05-dashboard.md`](05-dashboard.md) | Painel AI/BI | Dashboard de duas páginas |
-| 06 | [`06-agente.md`](06-agente.md) | Copiloto conversacional | O agente respondendo sobre Campinas |
-| 07 | [`07-relatorio-e-demonstracao.md`](07-relatorio-e-demonstracao.md) | Relatório executivo e provas | Uma página para a diretoria e oito queries |
+| 00 | [`00-setup.md`](00-setup.md) | Context, business rules, schemas and volume | A catalog with the four layers and the data in the volume |
+| 01 | [`01-bronze.md`](01-bronze.md) | Faithful ingestion | Four bronze tables and the quality dashboard flagging the defects |
+| 02 | [`02-silver-numeros.md`](02-silver-numeros.md) | Registry, RN-01, dedup and baseline | How many interruptions the 3-minute rule discarded |
+| 03 | [`03-silver-texto-regex.md`](03-silver-texto-regex.md) | Anonymization and enrichment with regex and `CASE` | The masked columns, in seconds |
+| 04 | [`04-gold.md`](04-gold.md) | The four deliverables and the metric view | DEC and FEC by district, coming out of a single definition |
+| 05 | [`05-dashboard.md`](05-dashboard.md) | AI/BI dashboard | A two-page dashboard |
+| 06 | [`06-agente.md`](06-agente.md) | Conversational copilot | The agent answering about Campinas |
 
-## O prompt 03 tem duas versões — escolha uma
+Two prompts from the original design are not published here: an AI-based variant of step 03
+(described below) and a final executive-report step.
 
-**É o único ponto da sequência onde a IA entra no pipeline de dados**, e é onde ela custa
-caro: cada função de IA é uma inferência por linha, e com 2.801 chamados e quatro funções
-na cadeia são ~11 mil chamadas ao modelo. A execução pode levar dezenas de minutos —
-suficiente para travar uma aula ao vivo.
+## Step 03 has two routes — this repository ships the regex one
 
-| | 03-A, com IA | 03-B, com regex |
+**It is the only point in the sequence where AI can enter the data pipeline**, and it is where
+it gets expensive: each AI function is one inference per row, and with 2,801 service calls
+and four functions in the chain that is ~11,000 model calls. Execution can take tens of
+minutes — enough to stall a live class.
+
+| | With AI | With regex (published) |
 |---|---|---|
-| Tempo | dezenas de minutos | segundos |
-| Qualidade da extração | entende o texto | pega o que casa com o padrão |
-| Reprodutibilidade | varia entre execuções | idêntica sempre |
+| Time | tens of minutes | seconds |
+| Extraction quality | understands the text | catches whatever matches the pattern |
+| Reproducibility | varies between runs | identical every time |
 
-As duas produzem **as mesmas colunas** e cumprem RN-09 e RN-10. Por isso o prompt 04 em
-diante — gold, dashboard, agente e relatório — funciona igual, sem saber qual rota você
-escolheu.
+Both produce **the same columns** and satisfy RN-09 and RN-10. That is why prompt 04
+onward — gold, dashboard and agent — works the same way, without knowing which route you
+took.
 
-Use o **03-A** quando quiser mostrar IA no pipeline; o **03-B** quando o tempo mandar, ou
-quando o workspace não tiver as funções `ai_*` disponíveis.
+## How to use it
 
-## Como usar
+1. Open Claude Code in the repository
+2. Paste the whole prompt, from start to finish
+3. Let it work, review, deploy and **look at the result**
+4. Only then move on to the next one
 
-1. Abra o Claude Code no repositório
-2. Cole o prompt inteiro, do começo ao fim
-3. Deixe ele trabalhar, revise, faça o deploy e **veja o resultado**
-4. Só então passe para o próximo
+Do not skip the order. Each prompt assumes the previous one is done and says explicitly
+what must **not** be done yet — that is what keeps the agent from trying to build the whole
+project at once and delivering everything half-finished.
 
-Não pule a ordem. Cada prompt assume o anterior pronto e diz explicitamente o que **não**
-deve ser feito ainda — é o que impede o agente de tentar construir o projeto inteiro de uma
-vez e entregar tudo pela metade.
+## Why a prompt and not an issue
 
-## Por que prompt e não issue
+Each of these files carries three things a regular ticket does not:
 
-Cada um desses arquivos carrega três coisas que um ticket comum não carrega:
+- **the business rule next to the request** — the agent does not have to guess why the
+  threshold is 3 minutes
+- **the known traps** — baseline over a series with trend, append-only streaming table,
+  `execCommand` outside the user gesture
+- **the acceptance criteria** — what has to be true for the step to be done
 
-- **a regra de negócio junto do pedido** — o agente não precisa adivinhar por que o limiar
-  é 3 minutos
-- **as armadilhas conhecidas** — baseline sobre série com tendência, streaming table
-  append-only, `execCommand` fora do gesto do usuário
-- **o critério de aceite** — o que precisa ser verdade para a etapa estar pronta
+## Reusing it on another project
 
-## Reaproveitando em outro projeto
-
-A sequência é o template: **setup → ingestão → limpeza → enriquecimento → negócio →
-visualização → agente → prova**. Trocar o domínio significa reescrever o prompt 00 inteiro
-e ajustar os nomes de tabela nos demais. A estrutura, as armadilhas técnicas e o formato
-com critério de aceite continuam valendo.
+The sequence is the template: **setup → ingestion → cleaning → enrichment → business →
+visualization → agent → proof**. Changing the domain means rewriting prompt 00 entirely and
+adjusting the table names in the others. The structure, the technical traps and the
+acceptance-criteria format still hold.

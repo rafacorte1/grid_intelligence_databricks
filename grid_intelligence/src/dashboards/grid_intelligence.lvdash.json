@@ -2,7 +2,7 @@
   "datasets": [
     {
       "name": "operacao",
-      "displayName": "Operação diária · últimos 30 dias",
+      "displayName": "Daily operations · last 30 days",
       "queryLines": [
         "SELECT data, nome_conjunto, qtd_chamados, qtd_chamados_risco_saude,\n",
         "  uc_horas_interrompidas\n",
@@ -13,7 +13,7 @@
     },
     {
       "name": "continuidade",
-      "displayName": "DEC · mês mais recente",
+      "displayName": "DEC · latest month",
       "queryLines": [
         "SELECT `Conjunto` AS nome_conjunto, `Mes` AS mes,\n",
         "  MEASURE(`DEC`) AS dec_horas\n",
@@ -25,7 +25,7 @@
     },
     {
       "name": "acoes",
-      "displayName": "Ações · último dia disponível",
+      "displayName": "Actions · latest available day",
       "queryLines": [
         "SELECT data, nome_conjunto, qtd_interrupcoes, qtd_chamados,\n",
         "  qtd_chamados_risco_saude, qtd_mencoes_ouvidoria, ucs_prioridade_alta, acao_recomendada\n",
@@ -38,7 +38,7 @@
     },
     {
       "name": "inspecao",
-      "displayName": "Evidências para visita técnica",
+      "displayName": "Evidence for the site visit",
       "queryLines": [
         "SELECT id_uc, nome_conjunto, bairro, classe_consumo, prioridade_inspecao,\n",
         "  variacao_da_uc / 100.0 AS variacao_uc,\n",
@@ -51,7 +51,7 @@
     },
     {
       "name": "bairros",
-      "displayName": "12 bairros com mais UCs candidatas na carga",
+      "displayName": "Top 12 neighborhoods by candidate UCs in the load",
       "queryLines": [
         "SELECT nome_conjunto, bairro, prioridade_inspecao, count(*) AS ucs\n",
         "FROM prioridade_inspecao_uc\n",
@@ -65,7 +65,7 @@
     },
     {
       "name": "clientes",
-      "displayName": "Clientes · risco alto de ouvidoria",
+      "displayName": "Customers · high ombudsman risk",
       "queryLines": [
         "SELECT id_cliente, nome_conjunto, bairro, qtd_chamados, qtd_ucs_com_chamado,\n",
         "  risco_ouvidoria, motivo_predominante, ultima_fala, ultimo_chamado_em\n",
@@ -76,7 +76,7 @@
     },
     {
       "name": "inspecao_atual",
-      "displayName": "Prioridade alta · fotografia atual",
+      "displayName": "High priority · current snapshot",
       "queryLines": [
         "SELECT ultimo_dia AS data, nome_conjunto,\n",
         "  count_if(prioridade_inspecao = 'alta') AS ucs_prioridade_alta\n",
@@ -89,7 +89,7 @@
   "pages": [
     {
       "name": "operacao",
-      "displayName": "Operação do dia",
+      "displayName": "Daily operations",
       "pageType": "PAGE_TYPE_CANVAS",
       "layoutVersion": "GRID_V1",
       "layout": [
@@ -98,7 +98,7 @@
             "name": "titulo-operacao",
             "multilineTextboxSpec": {
               "lines": [
-                "# Grid Intelligence · Operação"
+                "# Grid Intelligence · Operations"
               ]
             }
           },
@@ -114,7 +114,7 @@
             "name": "contexto-operacao",
             "multilineTextboxSpec": {
               "lines": [
-                "Série dos últimos 30 dias até a última data do dataset. Compare impacto na rede e chamadas à central. DEC: mês mais recente. Ações: último dia disponível."
+                "Last 30 days up to the latest dataset date. Compare network impact and calls to the service center. DEC: latest month. Actions: latest available day."
               ]
             }
           },
@@ -156,7 +156,7 @@
               },
               "frame": {
                 "showTitle": true,
-                "title": "Período da série operacional"
+                "title": "Operational series range"
               }
             }
           },
@@ -249,7 +249,7 @@
               },
               "frame": {
                 "showTitle": true,
-                "title": "Conjunto"
+                "title": "District"
               }
             }
           },
@@ -287,14 +287,14 @@
               "widgetType": "counter",
               "frame": {
                 "showTitle": true,
-                "title": "Horas-UC sem fornecimento",
+                "title": "UC-hours without supply",
                 "showDescription": true,
-                "description": "Impacto diário no fornecimento · janela de 30 dias"
+                "description": "Daily supply impact · 30-day window"
               },
               "encodings": {
                 "value": {
                   "fieldName": "sum(uc_horas_interrompidas)",
-                  "displayName": "Horas-UC sem fornecimento",
+                  "displayName": "UC-hours without supply",
                   "format": {
                     "type": "number",
                     "decimalPlaces": {
@@ -343,14 +343,14 @@
               "widgetType": "counter",
               "frame": {
                 "showTitle": true,
-                "title": "Chamados",
+                "title": "Service calls",
                 "showDescription": true,
-                "description": "Volume diário de atendimento · janela de 30 dias"
+                "description": "Daily call volume · 30-day window"
               },
               "encodings": {
                 "value": {
                   "fieldName": "sum(qtd_chamados)",
-                  "displayName": "Chamados",
+                  "displayName": "Service calls",
                   "format": {
                     "type": "number",
                     "decimalPlaces": {
@@ -399,14 +399,14 @@
               "widgetType": "counter",
               "frame": {
                 "showTitle": true,
-                "title": "Chamados com risco à saúde",
+                "title": "Health-risk service calls",
                 "showDescription": true,
-                "description": "Sinais explícitos no texto anonimizado"
+                "description": "Explicit signals in the anonymized text"
               },
               "encodings": {
                 "value": {
                   "fieldName": "sum(qtd_chamados_risco_saude)",
-                  "displayName": "Chamados com risco à saúde",
+                  "displayName": "Health-risk service calls",
                   "format": {
                     "type": "number",
                     "decimalPlaces": {
@@ -455,14 +455,14 @@
               "widgetType": "counter",
               "frame": {
                 "showTitle": true,
-                "title": "UCs · prioridade alta",
+                "title": "UCs · high priority",
                 "showDescription": true,
-                "description": "Fotografia da última carga · sem histórico anterior"
+                "description": "Latest load snapshot · no earlier history"
               },
               "encodings": {
                 "value": {
                   "fieldName": "sum(ucs_prioridade_alta)",
-                  "displayName": "UCs · prioridade alta",
+                  "displayName": "UCs · high priority",
                   "format": {
                     "type": "number",
                     "decimalPlaces": {
@@ -515,9 +515,9 @@
               "widgetType": "combo",
               "frame": {
                 "showTitle": true,
-                "title": "Quando a rede para, o atendimento sente",
+                "title": "When the network stops, the service desk feels it",
                 "showDescription": true,
-                "description": "Chamados em barras e horas-UC em linha · eixos distintos"
+                "description": "Service calls as bars, UC-hours as a line · separate axes"
               },
               "encodings": {
                 "x": {
@@ -531,7 +531,7 @@
                     "fields": [
                       {
                         "fieldName": "chamados",
-                        "displayName": "Chamados"
+                        "displayName": "Service calls"
                       }
                     ],
                     "scale": {
@@ -542,7 +542,7 @@
                     "fields": [
                       {
                         "fieldName": "horas_uc",
-                        "displayName": "Horas-UC interrompidas"
+                        "displayName": "Interrupted UC-hours"
                       }
                     ],
                     "scale": {
@@ -587,9 +587,9 @@
               "widgetType": "bar",
               "frame": {
                 "showTitle": true,
-                "title": "DEC por conjunto",
+                "title": "DEC by district",
                 "showDescription": true,
-                "description": "Mês mais recente do dataset · definição única da metric view"
+                "description": "Latest dataset month · single metric view definition"
               },
               "encodings": {
                 "x": {
@@ -676,39 +676,39 @@
               "widgetType": "table",
               "frame": {
                 "showTitle": true,
-                "title": "O que precisa de ação agora",
+                "title": "What needs action now",
                 "showDescription": true,
-                "description": "Último dia do dataset · saúde, ouvidoria, rede e visitas técnicas, nessa ordem"
+                "description": "Latest dataset day · health, ombudsman, network and site visits, in that order"
               },
               "encodings": {
                 "columns": [
                   {
                     "fieldName": "data",
-                    "displayName": "Data de referência"
+                    "displayName": "Reference date"
                   },
                   {
                     "fieldName": "nome_conjunto",
-                    "displayName": "Conjunto"
+                    "displayName": "District"
                   },
                   {
                     "fieldName": "qtd_chamados_risco_saude",
-                    "displayName": "Risco à saúde"
+                    "displayName": "Health risk"
                   },
                   {
                     "fieldName": "qtd_mencoes_ouvidoria",
-                    "displayName": "Ouvidoria"
+                    "displayName": "Ombudsman"
                   },
                   {
                     "fieldName": "qtd_interrupcoes",
-                    "displayName": "Interrupções"
+                    "displayName": "Interruptions"
                   },
                   {
                     "fieldName": "ucs_prioridade_alta",
-                    "displayName": "UCs · alta"
+                    "displayName": "UCs · high"
                   },
                   {
                     "fieldName": "acao_recomendada",
-                    "displayName": "Ação recomendada"
+                    "displayName": "Recommended action"
                   }
                 ]
               }
@@ -725,7 +725,7 @@
     },
     {
       "name": "inspecao-clientes",
-      "displayName": "Perdas não técnicas e clientes",
+      "displayName": "Non-technical losses and customers",
       "pageType": "PAGE_TYPE_CANVAS",
       "layoutVersion": "GRID_V1",
       "layout": [
@@ -734,7 +734,7 @@
             "name": "aviso-inspecao",
             "multilineTextboxSpec": {
               "lines": [
-                "## Inspeção e relacionamento\n\n**A classificação é prioridade de inspeção e nunca acusação.** Queda de consumo também pode indicar mudança de ocupação, medidor com defeito ou erro de leitura. Os sinais orientam uma verificação técnica em campo."
+                "## Inspection and customer relations\n\n**The classification is inspection priority, never an accusation.** A consumption drop can also mean a change of occupant, a faulty meter or a reading error. The signals guide a technical field check."
               ]
             }
           },
@@ -810,7 +810,7 @@
               },
               "frame": {
                 "showTitle": true,
-                "title": "Conjunto"
+                "title": "District"
               }
             }
           },
@@ -869,7 +869,7 @@
               },
               "frame": {
                 "showTitle": true,
-                "title": "Prioridade das visitas"
+                "title": "Visit priority"
               }
             }
           },
@@ -911,9 +911,9 @@
               "widgetType": "bar",
               "frame": {
                 "showTitle": true,
-                "title": "Onde concentrar as visitas",
+                "title": "Where to concentrate visits",
                 "showDescription": true,
-                "description": "12 bairros com mais UCs candidatas na carga · coral: alta, amarelo: média"
+                "description": "Top 12 neighborhoods by candidate UCs in the load · coral: high, yellow: medium"
               },
               "encodings": {
                 "x": {
@@ -923,7 +923,7 @@
                   "fields": [
                     {
                       "fieldName": "ucs",
-                      "displayName": "UCs candidatas"
+                      "displayName": "Candidate UCs"
                     }
                   ]
                 },
@@ -938,7 +938,7 @@
                 },
                 "color": {
                   "fieldName": "prioridade_inspecao",
-                  "displayName": "Prioridade",
+                  "displayName": "Priority",
                   "scale": {
                     "type": "categorical",
                     "mappings": [
@@ -1018,9 +1018,9 @@
               "widgetType": "table",
               "frame": {
                 "showTitle": true,
-                "title": "Evidências para a visita técnica",
+                "title": "Evidence for the site visit",
                 "showDescription": true,
-                "description": "Queda individual e estabilidade do conjunto · fotografia da última carga"
+                "description": "Individual drop and district stability · latest load snapshot"
               },
               "encodings": {
                 "columns": [
@@ -1030,15 +1030,15 @@
                   },
                   {
                     "fieldName": "bairro",
-                    "displayName": "Bairro"
+                    "displayName": "Neighborhood"
                   },
                   {
                     "fieldName": "prioridade_inspecao",
-                    "displayName": "Prioridade"
+                    "displayName": "Priority"
                   },
                   {
                     "fieldName": "variacao_uc",
-                    "displayName": "Variação da UC",
+                    "displayName": "UC variation",
                     "format": {
                       "type": "number-percent",
                       "decimalPlaces": {
@@ -1049,7 +1049,7 @@
                   },
                   {
                     "fieldName": "variacao_vizinhanca",
-                    "displayName": "Variação do conjunto",
+                    "displayName": "District variation",
                     "format": {
                       "type": "number-percent",
                       "decimalPlaces": {
@@ -1060,7 +1060,7 @@
                   },
                   {
                     "fieldName": "consumo_medio_baseline_kwh",
-                    "displayName": "Baseline (kWh/dia)",
+                    "displayName": "Baseline (kWh/day)",
                     "format": {
                       "type": "number",
                       "decimalPlaces": {
@@ -1071,7 +1071,7 @@
                   },
                   {
                     "fieldName": "consumo_medio_recente_kwh",
-                    "displayName": "Recente (kWh/dia)",
+                    "displayName": "Recent (kWh/day)",
                     "format": {
                       "type": "number",
                       "decimalPlaces": {
@@ -1082,7 +1082,7 @@
                   },
                   {
                     "fieldName": "motivo_observado",
-                    "displayName": "Motivo observado"
+                    "displayName": "Observed reason"
                   }
                 ]
               }
@@ -1138,35 +1138,35 @@
               "widgetType": "table",
               "frame": {
                 "showTitle": true,
-                "title": "Clientes em rota de ouvidoria",
+                "title": "Customers on the ombudsman path",
                 "showDescription": true,
-                "description": "Histórico de clientes com risco alto. A última fala já passou pela anonimização por regras de texto."
+                "description": "History of high-risk customers. The latest statement has already been anonymized by text rules."
               },
               "encodings": {
                 "columns": [
                   {
                     "fieldName": "id_cliente",
-                    "displayName": "Cliente"
+                    "displayName": "Customer"
                   },
                   {
                     "fieldName": "nome_conjunto",
-                    "displayName": "Conjunto"
+                    "displayName": "District"
                   },
                   {
                     "fieldName": "qtd_chamados",
-                    "displayName": "Chamados"
+                    "displayName": "Service calls"
                   },
                   {
                     "fieldName": "qtd_ucs_com_chamado",
-                    "displayName": "UCs com chamado"
+                    "displayName": "UCs with a call"
                   },
                   {
                     "fieldName": "risco_ouvidoria",
-                    "displayName": "Risco de ouvidoria"
+                    "displayName": "Ombudsman risk"
                   },
                   {
                     "fieldName": "ultima_fala",
-                    "displayName": "Última fala anonimizada"
+                    "displayName": "Latest anonymized statement"
                   }
                 ]
               }

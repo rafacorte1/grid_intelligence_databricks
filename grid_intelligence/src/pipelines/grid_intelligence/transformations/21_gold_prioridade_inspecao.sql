@@ -1,5 +1,5 @@
 CREATE OR REFRESH MATERIALIZED VIEW ${catalogo}.${schema_gold}.prioridade_inspecao_uc
-COMMENT 'UCs com sinais para visita tecnica. Prioridade alta exige queda individual, vizinhanca estavel e sinal no medidor. A lista orienta verificacao em campo.'
+COMMENT 'UCs showing signals that justify a site visit. High priority requires an individual drop, a stable neighborhood and a meter signal. The list guides field verification.'
 AS WITH eixos AS (
   SELECT *, variacao_da_uc <= -${queda_consumo_pct} AS caiu_contra_si,
     abs(variacao_do_conjunto) <= ${estabilidade_conjunto_pct} AS vizinhanca_estavel

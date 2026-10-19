@@ -1,169 +1,169 @@
-# Prompt 02 — Silver: os números
+# Prompt 02 — Silver: the numbers
 
-> **Prompt 3 de 8.** Requer a bronze pronta e populada.
+> **Prompt 3 of 8.** Requires bronze done and populated.
 
 ---
 
-Leia `.llm/prd.md`, inclusive a **diretriz de simplicidade**. Agora a **camada silver**, na
-parte numérica: cadastro, interrupções e consumo. O texto livre dos chamados fica para o
-próximo prompt.
+Read `.llm/prd.md`, including the **simplicity guideline**. Now the **silver layer**, in its
+numeric part: registry, interruptions and consumption. The free text of the service calls is left for the
+next prompt.
 
-## O que este prompt cria
+## What this prompt creates
 
-Três arquivos em `src/pipelines/grid_intelligence/transformations/`, quatro tabelas:
+Three files in `src/pipelines/grid_intelligence/transformations/`, four tables:
 
-| Arquivo | Cria | Tipo | Grão |
+| File | Creates | Type | Grain |
 |---|---|---|---|
-| `10_silver_cadastro.sql` | `silver.unidades_consumidoras` | streaming table | uma UC |
-| `11_silver_interrupcoes.sql` | `silver.interrupcoes_validas` | streaming table | um evento que passou na RN-01 |
-| `12_silver_consumo.sql` | `silver.consumo_diario` | materialized view | UC × dia |
-| `12_silver_consumo.sql` | `silver.baseline_consumo` | materialized view | uma UC |
+| `10_silver_cadastro.sql` | `silver.unidades_consumidoras` | streaming table | one UC (electricity delivery point) |
+| `11_silver_interrupcoes.sql` | `silver.interrupcoes_validas` | streaming table | one event that passed RN-01 |
+| `12_silver_consumo.sql` | `silver.consumo_diario` | materialized view | UC × day |
+| `12_silver_consumo.sql` | `silver.baseline_consumo` | materialized view | one UC |
 
-**Por que 12 é materialized view e os outros dois não:** deduplicar exige olhar todas as
-linhas da mesma chave, e baseline exige janela — as duas coisas são batch. Streaming table
-enxerga só o lote novo, e serve bem para filtro linha a linha, que é o caso de 10 e 11.
+**Why 12 is a materialized view and the other two are not:** deduplicating requires looking at all
+rows of the same key, and the baseline requires a window — both things are batch. A streaming table
+sees only the new batch, and serves well for row-by-row filtering, which is the case of 10 and 11.
 
-**Sem expectations, sem `CONSTRAINT`, sem `COMMENT`.** Todo descarte desta camada é um
-`WHERE` que se lê em voz alta.
+**No expectations, no `CONSTRAINT`, no `COMMENT`.** Every discard in this layer is a
+`WHERE` that reads out loud.
 
-## 1. `silver.unidades_consumidoras` — cadastro limpo
+## 1. `silver.unidades_consumidoras` — a clean registry
 
-Streaming table a partir de `STREAM(bronze.unidades_consumidoras)`.
+A streaming table from `STREAM(bronze.unidades_consumidoras)`.
 
-O gerador estraga uma fração pequena dos cadastros de propósito, e aqui é onde isso se
-resolve — três casos, três expressões:
+The generator spoils a small fraction of the registry entries on purpose, and this is where that gets
+resolved — three cases, three expressions:
 
-| Problema na origem | O que fazer |
+| Problem at the source | What to do |
 |---|---|
-| `classe_consumo` chega como `'  RESIDENCIAL '` | `lower(trim(classe_consumo))` |
-| `bairro` chega vazio | `'nao informado'` — **não invente bairro** |
-| UC sem chave ou sem conjunto | `WHERE id_uc IS NOT NULL AND id_conjunto IS NOT NULL` |
+| `classe_consumo` arrives as `'  RESIDENCIAL '` | `lower(trim(classe_consumo))` |
+| `bairro` arrives empty | `'nao informado'` — **do not invent a district** |
+| A UC with no key or no district | `WHERE id_uc IS NOT NULL AND id_conjunto IS NOT NULL` |
 
-A normalização da classe não é frescura: sem ela o `GROUP BY` por classe devolve duas
-linhas para a mesma classe, e o dashboard mostra "residencial" duas vezes.
+Normalizing the class is not fussiness: without it, the `GROUP BY` by class returns two
+rows for the same class, and the dashboard shows "residencial" twice.
 
-Bairro faltando é um problema de cadastro que alguém precisa resolver na origem. Marcar
-como `'nao informado'` preserva o fato; preencher com o bairro do vizinho o apagaria.
+A missing district is a registry problem that someone has to solve at the source. Marking it
+as `'nao informado'` preserves the fact; filling it with the neighbor's district would erase it.
 
-## 2. `silver.interrupcoes_validas` — a RN-01
+## 2. `silver.interrupcoes_validas` — RN-01
 
-**Este é o arquivo mais importante do prompt.** É onde a regra dos 3 minutos vive.
+**This is the most important file in the prompt.** It is where the 3-minute rule lives.
 
-> Somente interrupções **de fornecimento** com duração maior ou igual a 3 minutos entram na
-> apuração dos indicadores de continuidade.
+> Only **supply** interruptions with a duration greater than or equal to 3 minutes enter the
+> calculation of the continuity indicators.
 
-O corte é sobre a coluna `duracao_minutos` de `bronze.interrupcoes`. Evento abaixo disso é o
-religador atuando — galho na rede, desarme e religamento automático em segundos. O
-consumidor vê a luz piscar; não é falta de energia. No dataset são 310 de 1.383 eventos,
-22,4%.
+The cut is on the `duracao_minutos` column of `bronze.interrupcoes`. An event below that is the
+recloser operating — a branch on the line, trip and automatic reclose in seconds. The
+customer sees the light flicker; it is not a power outage. In the dataset they are 310 of 1,383 events,
+22.4%.
 
-A regra inteira é uma linha:
+The whole rule is one line:
 
 ```sql
 WHERE duracao_minutos >= ${duracao_minima_interrupcao_min}
 ```
 
-Três coisas que quero explícitas:
+Three things I want explicit:
 
-1. **O limiar não pode ser `3` escrito no meio da query.** Ele vem da `configuration` do
-   pipeline. A regra é do regulador, não do engenheiro: se a ANEEL mudar o limiar, muda-se
-   uma linha de configuração.
-2. **O descarte acontece aqui, uma vez.** Se cada área aplicasse o próprio filtro, cada
-   uma calcularia um DEC diferente — e divergência de número entre relatórios internos é
-   problema real em fiscalização.
-3. **As interrupções curtas não somem do mundo:** continuam na bronze, onde qualquer um
-   pode contá-las. O que elas não fazem é virar indicador.
+1. **The threshold cannot be `3` written in the middle of the query.** It comes from the pipeline
+   `configuration`. The rule belongs to the regulator, not to the engineer: if ANEEL changes the threshold,
+   one configuration line changes.
+2. **The discard happens here, once.** If each area applied its own filter, each
+   one would compute a different DEC — and a number mismatch between internal reports is
+   a real problem in regulatory inspection.
+3. **Short interruptions do not disappear from the world:** they remain in bronze, where anyone
+   can count them. What they do not do is become an indicator.
 
-Duas linhas de comentário acima do `WHERE`, explicando o religador. É o tipo de decisão que
-o código não conta sozinho.
+Two comment lines above the `WHERE`, explaining the recloser. It is the kind of decision that
+the code does not tell on its own.
 
-### As colunas derivadas — é aqui que o DEC começa
+### The derived columns — this is where DEC starts
 
-Filtrar não basta. Este arquivo prepara os insumos que a gold vai apenas somar:
+Filtering is not enough. This file prepares the inputs that gold will only sum:
 
-| Coluna derivada | Expressão | Para quê |
+| Derived column | Expression | What for |
 |---|---|---|
-| `data_evento` | `to_date(inicio)` | grão do painel operacional |
-| `mes_apuracao` | `date_trunc('MONTH', inicio)` | grão da apuração (RN-05) |
-| `duracao_horas` | `duracao_minutos / 60.0` | o indicador é em horas |
-| **`uc_horas_interrompidas`** | `duracao_horas × qtd_ucs_afetadas` | **numerador do DEC (RN-02)** |
-| `causa_climatica` | `causa = 'climatica'` | separa intempérie do resto |
+| `data_evento` | `to_date(inicio)` | grain of the operational dashboard |
+| `mes_apuracao` | `date_trunc('MONTH', inicio)` | grain of the calculation (RN-05) |
+| `duracao_horas` | `duracao_minutos / 60.0` | the indicator is in hours |
+| **`uc_horas_interrompidas`** | `duracao_horas × qtd_ucs_afetadas` | **DEC numerator (RN-02)** |
+| `causa_climatica` | `causa = 'climatica'` | separates weather from the rest |
 
-**Por que o produto é calculado aqui e não na gold.** `uc_horas_interrompidas` é uma
-quantidade **aditiva**: somar em qualquer recorte — mês, conjunto, ano — dá o número certo.
-Se o produto fosse feito depois da agregação, seria média de média, que não é. Deixar o
-insumo pronto no grão do evento é o que permite à metric view responder corretamente a
-qualquer corte que o usuário pedir.
+**Why the product is computed here and not in gold.** `uc_horas_interrompidas` is an
+**additive** quantity: summing it over any slice — month, district, year — gives the right number.
+If the product were done after the aggregation, it would be an average of averages, which it is not.
+Leaving the input ready at the grain of the event is what allows the metric view to answer correctly
+any cut the user asks for.
 
-O numerador do FEC não precisa de coluna nova: é `qtd_ucs_afetadas`, que já vem da origem.
+The FEC numerator does not need a new column: it is `qtd_ucs_afetadas`, which already comes from the source.
 
-## 3. `silver.consumo_diario` — descarte e deduplicação
+## 3. `silver.consumo_diario` — discard and deduplication
 
-**Materialized view, não streaming table.** O motivo é concreto: o concentrador reenvia
-leituras e a mesma chave `(id_uc, data)` chega duas vezes. Escolher uma das duas exige
-olhar todas as linhas daquela chave — isso é batch, não streaming.
+**A materialized view, not a streaming table.** The reason is concrete: the concentrator resends
+readings and the same key `(id_uc, data)` arrives twice. Choosing one of the two requires
+looking at all rows of that key — that is batch, not streaming.
 
-O que descartar, num `WHERE` só:
+What to discard, in a single `WHERE`:
 
-- consumo nulo — medidor sem comunicar no ciclo
-- consumo negativo — erro de sinal no registrador
-- consumo acima do limite físico da ligação
+- null consumption — a meter that did not communicate in the cycle
+- negative consumption — a sign error in the recorder
+- consumption above the physical limit of the connection
 
-O **limite físico é definido aqui**, do lado de quem consome o dado, e não herdado do
-gerador. Numa distribuidora é assim: quem recebe a telemetria estabelece o que considera
-plausível para cada tipo de ligação. Use um `CASE` por classe de consumo.
+The **physical limit is defined here**, on the side of whoever consumes the data, and not inherited from the
+generator. In a utility that is how it works: whoever receives the telemetry establishes what it considers
+plausible for each type of connection. Use a `CASE` per consumption class.
 
-Para a duplicata, `qualify row_number() over (partition by id_uc, data order by ingerido_em desc) = 1`
-resolve em uma linha — não precisa de CTE.
+For the duplicate, `qualify row_number() over (partition by id_uc, data order by ingerido_em desc) = 1`
+solves it in one line — no CTE needed.
 
-Faça o join com o cadastro para que cada linha já carregue conjunto, bairro e classe — as
-regras de perdas não técnicas não deveriam ter de refazer esse join.
+Join with the registry so that each row already carries district, neighborhood and class — the
+non-technical loss rules should not have to redo that join.
 
-## 4. `silver.baseline_consumo` — o insumo dos dois eixos
+## 4. `silver.baseline_consumo` — the input for the two axes
 
-É a tabela que dá à RN-06 as duas comparações:
+It is the table that gives RN-06 its two comparisons:
 
-- **janela recente:** os últimos 30 dias do dataset
-- **janela baseline:** os **90 dias imediatamente anteriores** a ela
+- **recent window:** the last 30 days of the dataset
+- **baseline window:** the **90 days immediately before** it
 
-### Por que o baseline não é "tudo que veio antes" — leia antes de simplificar
+### Why the baseline is not "everything that came before" — read this before simplifying
 
-A carga da Luz do Vale cresce ~30% ao ano e o dataset tem quatro anos. Comparar os últimos
-30 dias contra a média de todo o histórico acusa **alta de mais de 50% em toda UC do
-sistema**, porque a média inclui o primeiro ano, quando o consumo era quase três vezes
-menor. Resultado prático: o segundo eixo da RN-06 nunca considera a vizinhança estável e a
-detecção de perdas para de funcionar por completo.
+The load on Luz do Vale grows ~30% a year and the dataset has four years. Comparing the last
+30 days against the average of the entire history flags **an increase of more than 50% in every UC in the
+system**, because the average includes the first year, when consumption was almost three times
+lower. Practical result: the second axis of RN-06 never considers the neighborhood stable and
+loss detection stops working completely.
 
-Baseline sobre série com tendência precisa de **janela comparável**. Noventa dias
-imediatamente anteriores carregam ~4% de crescimento entre o centro de uma janela e o da
-outra — ruído pequeno o bastante para a faixa de estabilidade absorver, e período longo o
-bastante para a média não balançar com duas semanas atípicas.
+A baseline over a series with a trend needs a **comparable window**. Ninety days
+immediately before carry ~4% growth between the center of one window and that of the
+other — noise small enough for the stability band to absorb, and a period long enough
+for the average not to swing with two atypical weeks.
 
-### Outra armadilha
+### Another trap
 
-Ancore a janela no **maior dia do dataset**, nunca em `current_date()`. O dataset é
-sintético e pode ter sido gerado semana passada; ancorar no relógio faz a análise deslizar
-para fora do dado e devolver tabela vazia — sintoma clássico e chato de diagnosticar.
+Anchor the window on the **largest day in the dataset**, never on `current_date()`. The dataset is
+synthetic and may have been generated last week; anchoring to the clock makes the analysis slide
+out of the data and return an empty table — a classic and annoying symptom to diagnose.
 
-Calcule, por UC: média no baseline, média no recente, contagem de dias em cada janela, e a
-variação percentual. E, por conjunto, as mesmas médias — é o segundo eixo.
+Compute, per UC: the average in the baseline, the average in the recent window, the day count in each window, and the
+percentage change. And, per district, the same averages — that is the second axis.
 
-## Ao terminar
+## When you finish
 
-Rode o pipeline e me mostre:
+Run the pipeline and show me:
 
-1. Quantas interrupções a RN-01 descartou, em número e em percentual — deve ser **310 de
-   1.383**, sobrando **1.073**
-2. Quantas linhas de consumo foram descartadas, e quantas duplicatas sumiram
-3. A variação média do conjunto `CPQ-02` entre as duas janelas — precisa estar perto de
-   zero, senão o segundo eixo não vai funcionar no próximo prompt
+1. How many interruptions RN-01 discarded, in number and in percentage — it should be **310 of
+   1,383**, leaving **1,073**
+2. How many consumption rows were discarded, and how many duplicates disappeared
+3. The average change of district `CPQ-02` between the two windows — it needs to be close to
+   zero, otherwise the second axis will not work in the next prompt
 
-## Critério de aceite
+## Acceptance criteria
 
-- O limiar de 3 minutos vem de configuração, não está escrito no SQL
-- `silver.interrupcoes_validas` tem 1.073 linhas
-- `silver.consumo_diario` não tem consumo nulo, negativo ou acima do limite, nem chave
-  `(id_uc, data)` repetida
-- A variação do conjunto entre as janelas está dentro de ±10%
-- Nenhuma expectation, nenhum `CONSTRAINT`, nenhum `COMMENT`
-- Cada arquivo cabe em uma tela e meia
+- The 3-minute threshold comes from configuration, it is not written in the SQL
+- `silver.interrupcoes_validas` has 1,073 rows
+- `silver.consumo_diario` has no null, negative or above-limit consumption, nor a repeated
+  `(id_uc, data)` key
+- The district change between the windows is within ±10%
+- No expectation, no `CONSTRAINT`, no `COMMENT`
+- Each file fits on a screen and a half

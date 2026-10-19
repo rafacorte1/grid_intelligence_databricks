@@ -1,4 +1,4 @@
-"""Aplica o Genie versionado usando o contexto do bundle e autenticacao da CLI."""
+"""Apply the versioned Genie definition using bundle context and CLI authentication."""
 
 import argparse
 import copy
@@ -39,7 +39,7 @@ def render_space(template, catalog):
 def find_space(spaces, title):
     matches = [s['space_id'] for s in spaces if s.get('title') == title]
     if len(matches) > 1:
-        raise ValueError('Mais de um space com o mesmo titulo; informe --space-id.')
+        raise ValueError('More than one space shares this title; pass --space-id.')
     return matches[0] if matches else None
 
 
@@ -64,27 +64,27 @@ def main():
     args = parser.parse_args()
     ctx = context(args.profile, args.target)
     space = render_space(json.loads(TEMPLATE.read_text()), ctx['catalog'])
-    # Exemplos ensinam o modelo: executar antes de tornar a definicao disponivel.
+    # Examples teach the model: run them before exposing the definition.
     examples = space['instructions']['example_question_sqls']
     sqls = [''.join(example['sql']) for example in examples]
     results = cli(args.profile, 'experimental', 'aitools', 'tools', 'query',
                   '--warehouse', ctx['warehouse'], '--', *sqls)
     for i, result in enumerate(results, 1):
         if result['state'] != 'SUCCEEDED':
-            raise RuntimeError(f'Exemplo {i}: {result.get("error")}')
-        print(f'Exemplo {i}: SQL aprovado ({len(result.get("rows", []))} linhas)', flush=True)
+            raise RuntimeError(f'Example {i}: {result.get("error")}')
+        print(f'Example {i}: SQL passed ({len(result.get("rows", []))} rows)', flush=True)
     if len(results) != len(examples):
-        raise RuntimeError('A CLI nao retornou todos os exemplos.')
+        raise RuntimeError('The CLI did not return every example.')
     title = f'[{args.target}] Grid Intelligence — Copiloto de operacoes'
     payload = {
         'title': title,
-        'description': 'Copiloto em português para a diretoria da Luz do Vale: continuidade, '
-                       'atendimento e prioridade de inspeção. Quatro fontes gold; sem acusações.',
+        'description': 'Operations copilot for the Luz do Vale board: continuity, service '
+                       'calls and inspection priority. Four Gold sources; no accusations.',
         'warehouse_id': ctx['warehouse'],
         'serialized_space': json.dumps(space, ensure_ascii=False),
     }
     if args.dry_run:
-        print('Dry-run: nenhuma criacao ou atualizacao realizada.')
+        print('Dry run: nothing created or updated.')
         return
     space_id = args.space_id
     if not space_id:
@@ -106,7 +106,7 @@ def main():
         applied = cli(args.profile, 'genie', 'create-space', payload=payload)
     space_id = applied.get('space_id', space_id)
     if not space_id:
-        raise RuntimeError('API nao retornou o identificador do space.')
+        raise RuntimeError('The API did not return the space identifier.')
     state = {**ctx, 'space_id': space_id, 'target': args.target, 'profile': args.profile,
              'url': f'{ctx["host"]}/genie/rooms/{space_id}'}
     path = ROOT / '.databricks/genie' / f'{args.target}.json'

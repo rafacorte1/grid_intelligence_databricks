@@ -8,6 +8,6 @@ AS SELECT
   (duracao_minutos / 60.0) * qtd_ucs_afetadas AS uc_horas_interrompidas,
   causa = 'climatica' AS causa_climatica
 FROM STREAM(${catalogo}.${schema_bronze}.interrupcoes)
--- RN-01: eventos curtos representam o religador atuando, nao falta sustentada.
--- Permanecem na bronze, mas nao participam dos indicadores de continuidade.
+-- RN-01: short events are the recloser doing its job, not a sustained outage.
+-- They stay in Bronze but do not feed the continuity indicators.
 WHERE duracao_minutos >= ${duracao_minima_interrupcao_min};

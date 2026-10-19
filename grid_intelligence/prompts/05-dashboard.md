@@ -1,78 +1,81 @@
-# Prompt 05 — Dashboard AI/BI
+# Prompt 05 — AI/BI dashboard
 
-> **Prompt 6 de 8.** Requer a camada gold e a metric view publicadas.
+> **Prompt 6 of 8.** Requires the gold layer and the metric view to be published.
 
 ---
 
-Leia `.llm/prd.md`. Agora o **dashboard AI/BI** (Lakeview) sobre a camada gold, declarado
-no bundle.
+Read `.llm/prd.md`. Now the **AI/BI dashboard** (Lakeview) over the gold layer, declared
+in the bundle.
 
-Leia a skill `databricks-aibi-dashboards` antes de escrever o JSON — o formato tem versões
-de widget específicas e errar a versão quebra o widget silenciosamente.
+Read the `databricks-aibi-dashboards` skill before writing the JSON — the format has
+version-specific widget definitions, and getting the version wrong breaks the widget
+silently.
 
-## Quem abre este dashboard
+## Who opens this dashboard
 
-O gestor de operações da distribuidora, às 8h da manhã, com dois minutos. Ele quer saber
-**o que aconteceu** e **o que precisa de ação hoje** — nessa ordem.
+The distributor's operations manager, at 8 a.m., with two minutes to spare. He wants to
+know **what happened** and **what needs action today** — in that order.
 
-## Duas páginas
+## Two pages
 
-### Página 1 — Operação do dia
+### Page 1 — Today's operations
 
-- **Quatro KPIs no topo**, com sparkline: horas-UC sem fornecimento, chamados, chamados com
-  risco à saúde, UCs em prioridade de inspeção. Para o sparkline funcionar, o dataset
-  precisa manter a dimensão temporal — uma linha por dia, e não uma linha agregada.
-- **Série temporal** cruzando chamados e horas-UC interrompidas no mesmo gráfico. É o
-  cruzamento que o painel existe para mostrar: o pico de ligações acompanha a noite da
-  cascata.
-- **Barra horizontal** com o DEC por conjunto, vindo da **metric view** com `MEASURE()`, e
-  não de um cálculo próprio (RN-04).
-- **Tabela** do que precisa de ação, com a coluna `acao_recomendada`.
+- **Four KPIs at the top**, with a sparkline: UC-hours without supply, service calls,
+  service calls with a health risk, UCs on inspection priority (UC, electricity delivery
+  point). For the sparkline to work, the dataset has to keep the time dimension — one row
+  per day, not one aggregated row.
+- **Time series** crossing service calls and interrupted UC-hours on the same chart. That
+  crossover is what the dashboard exists to show: the spike in calls follows the night of
+  the cascade.
+- **Horizontal bar** with DEC by district, coming from the **metric view** with `MEASURE()`,
+  not from a calculation of your own (RN-04).
+- **Table** of what needs action, with the `acao_recomendada` column.
 
-### Página 2 — Perdas não técnicas e clientes
+### Page 2 — Non-technical losses and customers
 
-Comece a página com um bloco de texto explicando, para quem for olhar, que a classificação
-é **prioridade de inspeção e nunca acusação** (RN-07). Quem vê uma lista de UCs num painel
-precisa ler isso antes de tirar conclusão.
+Open the page with a text block explaining, for whoever is looking, that the classification
+is **inspection priority and never an accusation** (RN-07). Anyone who sees a list of UCs on
+a dashboard needs to read that before drawing a conclusion.
 
-- **Barra empilhada** de UCs por bairro e prioridade. Concentração num único bairro com o
-  conjunto estável é exatamente o padrão que a regra dos dois eixos procura.
-- **Tabela** do detalhe da priorização, com o motivo observado.
-- **Tabela** de clientes em rota de ouvidoria, com a última fala. Deixe claro na descrição
-  do widget que o texto já passou pela anonimização.
+- **Stacked bar** of UCs by neighborhood and priority. Concentration in a single
+  neighborhood while the district stays stable is exactly the pattern the two-axis rule
+  looks for.
+- **Table** with the detail of the prioritization, including the observed reason.
+- **Table** of customers on the ombudsman route, with the latest statement. Make it clear
+  in the widget description that the text has already been anonymized.
 
-## Regras do JSON
+## JSON rules
 
-- Queries usam **nomes de tabela nus** (`FROM painel_operacional_dia`). Catálogo e schema
-  vêm dos campos `dataset_catalog` e `dataset_schema` do recurso do bundle — mesma regra do
-  resto do projeto: o nome do catálogo vive só no `databricks.yml`.
-- `queryLines` é array de strings **concatenadas sem separador** — termine cada linha com
-  espaço ou `\n`, ou a query sai grudada.
-- Widgets **inline** em `layout[].widget`, nunca num array `widgets` separado.
-- `query.fields[].name` tem de bater exatamente com `encodings.*.fieldName`.
-- Versões: `counter` e `table` são versão 2; `bar` e `line` são versão 3.
+- Queries use **bare table names** (`FROM painel_operacional_dia`). Catalog and schema come
+  from the `dataset_catalog` and `dataset_schema` fields of the bundle resource — same rule
+  as the rest of the project: the catalog name lives only in `databricks.yml`.
+- `queryLines` is an array of strings **concatenated with no separator** — end every line
+  with a space or `\n`, or the query comes out glued together.
+- Widgets **inline** in `layout[].widget`, never in a separate `widgets` array.
+- `query.fields[].name` must match `encodings.*.fieldName` exactly.
+- Versions: `counter` and `table` are version 2; `bar` and `line` are version 3.
 
-## Cor
+## Color
 
-Defina o tema em `uiSettings.theme` — sem isso o dashboard herda o padrão do workspace e
-fica genérico. Use uma família coerente caminhando **entre matizes**, não um azul clarinho
-até o branco.
+Define the theme in `uiSettings.theme` — without it the dashboard inherits the workspace
+default and looks generic. Use a coherent family moving **across hues**, not a pale blue
+fading into white.
 
-Cores semânticas entram como **hex literal** em `color.scale.mappings`: prioridade alta em
-coral quente, média em amarelo. Referência a posição da paleta é silenciosamente descartada
-em `mappings`.
+Semantic colors go in as **literal hex** in `color.scale.mappings`: high priority in warm
+coral, medium in yellow. A reference to a palette position is silently discarded in
+`mappings`.
 
-## Ao terminar
+## When you finish
 
-1. **Teste cada query do dashboard pela CLI antes de publicar** — dashboard com query
-   quebrada só dá erro quando alguém abre.
+1. **Test every dashboard query through the CLI before publishing** — a dashboard with a
+   broken query only errors when someone opens it.
 2. `databricks bundle deploy -t dev --profile grid_intelligence`
-3. Me mande o link do dashboard e um print da página 1
+3. Send me the dashboard link and a screenshot of page 1
 
-## Critério de aceite
+## Acceptance criteria
 
-- Todas as queries rodam sem erro contra a gold
-- O DEC do dashboard vem da metric view, não de cálculo próprio
-- Nenhum nome de catálogo dentro do JSON
-- A página 2 avisa que a saída é prioridade de inspeção, não acusação
-- O dashboard abre e os widgets renderizam
+- Every query runs without error against gold
+- The dashboard's DEC comes from the metric view, not from a calculation of your own
+- No catalog name inside the JSON
+- Page 2 states that the output is inspection priority, not an accusation
+- The dashboard opens and the widgets render

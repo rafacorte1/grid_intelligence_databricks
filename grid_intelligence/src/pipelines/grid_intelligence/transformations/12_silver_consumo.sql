@@ -3,7 +3,7 @@ TBLPROPERTIES ('delta.feature.timestampNtz' = 'supported')
 AS WITH leituras AS (SELECT
   c.*, u.id_cliente, u.id_conjunto, u.nome_conjunto, u.municipio, u.bairro,
   u.classe_consumo,
-  -- Tetos diarios de plausibilidade definidos pelo consumidor da telemetria.
+  -- Daily plausibility ceilings agreed with the telemetry data consumer.
   CASE u.classe_consumo
     WHEN 'residencial' THEN 200.0 WHEN 'comercial' THEN 2000.0
     WHEN 'industrial' THEN 50000.0 WHEN 'rural' THEN 3000.0
