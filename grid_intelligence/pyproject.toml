@@ -1,7 +1,7 @@
 [project]
 name = "grid_intelligence"
 version = "0.0.1"
-authors = [{ name = "rafcorte@gmail.com" }]
+authors = [{ name = "Rafael Corte" }]
 requires-python = ">=3.12"
 dependencies = [
     # Any dependencies for jobs and pipelines in this project can be added here

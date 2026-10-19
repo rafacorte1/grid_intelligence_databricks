@@ -1,121 +1,136 @@
 # Grid Intelligence
 
-Plataforma de dados e IA da Luz do Vale Distribuidora S.A., distribuidora ficticia
- de energia eletrica. O contexto e as regras estao em [.llm/prd.md](.llm/prd.md).
+**A governed Databricks lakehouse and operations copilot for a fictional electric utility.**
 
-## Setup
+Grid Intelligence connects power interruptions, daily electricity consumption and
+customer service calls to operational decisions. It demonstrates data engineering,
+semantic modeling, privacy controls and natural language analytics in one workflow.
+All business data is synthetic. This is a development portfolio project, not a
+production utility system or evidence of commercial impact.
 
-Autentique com OAuth no profile escolhido:
+## What the project demonstrates
+
+- **Lakehouse engineering:** Bronze → Silver → Gold pipelines with explicit grains,
+  plausibility checks, deduplication and dataset-relative analysis windows.
+- **Governed analytics:** one metric view defines DEC/FEC for both the dashboard
+  and the conversational interface, avoiding competing KPI calculations.
+- **Privacy-aware processing:** access-controlled original transcripts coexist with
+  masked text for analytics. Deterministic rules expose their limitations.
+- **Decision support:** inspection priorities combine an individual consumption
+  decline with neighborhood stability. They guide technical visits, not accusations.
+- **Conversational evaluation:** a Portuguese Genie copilot uses four curated Gold
+  sources and is tested through the Conversation API, including an adversarial question.
+- **Deployment as code:** Declarative Automation Bundles manage platform resources;
+  the Genie definition is versioned and applied by an idempotent Python/CLI script.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    A["Synthetic Parquet inputs\nconsumption · outages · service calls · UCs"] --> B["Bronze\nsource fidelity + ingestion metadata"]
+    B --> C["Silver\nvalidated numbers + masked text"]
+    C --> D["Gold\ncontinuity · daily operations\ninspection priorities · customer health"]
+    D --> M["Governed metric view\nDEC / FEC"]
+    D --> V["AI/BI dashboard"]
+    M --> V
+    D --> G["Genie operations copilot\nfour curated Gold sources"]
+    M --> G
+    U["Unity Catalog\naccess control + column masks"] -.-> B
+    U -.-> C
+    J["Serverless Lakeflow Job\npipeline → governance → metric view"] -.-> B
+    J -.-> M
+```
+
+**Stack:** Databricks SQL, Delta Lake, Unity Catalog, Lakeflow Spark Declarative
+Pipelines, Lakeflow Jobs, serverless compute, metric views, AI/BI dashboards,
+Genie, Python and the Databricks CLI. Text enrichment uses deterministic regex
+rules; this project does not train a supervised classification model.
+
+## Evidence from the synthetic dataset
+
+| Item | Observed result |
+| --- | ---: |
+| Consumption records ingested | 5,854,587 |
+| Valid, unique UC/day consumption records | 5,803,274 |
+| Electricity delivery points (UCs) | 4,000 |
+| Service calls preserved | 2,801 |
+| Interruption events eligible for continuity | 1,073 |
+| District/month combinations | 288 |
+| High-priority inspection candidates | 21 |
+
+These are dataset and validation results, not claims of prevented losses, reduced
+costs or model accuracy. Read the [validation report](docs/validation.md) for what
+was checked and what remains limited.
+
+## Business semantics
+
+A **UC** is an electricity delivery point; one customer can have multiple UCs.
+A **conjunto** is an electrical district. **DEC** is average interruption duration
+per UC, in hours; **FEC** is average interruption frequency per UC. These are
+Brazilian continuity indicators related to the SAIDI/SAIFI family of metrics.
+**PNT** means non-technical losses. Inspection priority is a triage signal and does
+not establish misconduct or quantify losses.
+
+Relative dates use the latest available dataset date. The sample ends in July
+2026; querying the wall clock would incorrectly return empty results. Inspection
+priorities are a current snapshot, so their KPI has one dated point rather than
+an invented historical trend.
+
+## Run the project
+
+Prerequisites: Python 3.12+, a current Databricks CLI, an authenticated profile,
+Unity Catalog permissions, serverless pipeline availability and a SQL warehouse.
+Raw synthetic fixtures are supplied separately and are intentionally excluded
+from Git. The repository does not yet include a fixture generator.
 
 ```bash
 databricks auth login --profile grid_intelligence
-```
-
-O bundle isola os ambientes por catalogo: `grid_dev` em dev e `grid_intelligence`
-em prod. Os nomes sao configurados em `databricks.yml`. Ambos usam schemas `raw`,
-`bronze`, `silver` e `gold`, sem prefixo do usuario.
-
-Crie os catalogos por SQL antes do primeiro deploy para usar o armazenamento padrao:
-
-```bash
-databricks experimental aitools tools query --profile grid_intelligence \
-  "CREATE CATALOG IF NOT EXISTS grid_dev COMMENT 'Catalogo de desenvolvimento da Grid Intelligence'"
-databricks experimental aitools tools query --profile grid_intelligence \
-  "CREATE CATALOG IF NOT EXISTS grid_intelligence COMMENT 'Catalogo de producao da Grid Intelligence'"
-databricks grants update CATALOG grid_dev \
-  --json '{"changes":[{"principal":"rafcorte@gmail.com","add":["ALL_PRIVILEGES"]}]}' \
-  --profile grid_intelligence
-databricks grants update CATALOG grid_intelligence \
-  --json '{"changes":[{"principal":"rafcorte@gmail.com","add":["ALL_PRIVILEGES"]}]}' \
-  --profile grid_intelligence
+export BUNDLE_VAR_warehouse_id='<YOUR_SQL_WAREHOUSE_ID>'
 databricks bundle validate --strict -t dev --profile grid_intelligence
 databricks bundle deploy -t dev --profile grid_intelligence
-```
-
-Os schemas e o volume managed `raw.landing` sao gerenciados por
-`resources/grid_schemas.yml`. As transformacoes bronze, silver e gold ficam no
-pipeline do mesmo bundle. O deploy descrito aqui publica somente dev.
-
-### Upload dos dados
-
-As quatro bases estao na pasta local `landing/`, cada uma com um unico Parquet.
-O upload e separado do deploy. Caminhos para a interface:
-
-```text
-/Volumes/grid_dev/raw/landing/unidades_consumidoras/
-/Volumes/grid_dev/raw/landing/interrupcoes/
-/Volumes/grid_dev/raw/landing/consumo_diario/
-/Volumes/grid_dev/raw/landing/chamados/
-```
-
-Para enviar as quatro pastas pelo terminal, usando o caminho desta maquina:
-
-```bash
-databricks fs cp -r \
-  /Users/rafaelcorte/lakehouse-databricks/grid_intelligence/landing \
-  dbfs:/Volumes/grid_dev/raw/landing \
-  --overwrite --profile grid_intelligence
-```
-
-Mantenha uma pasta por base: a bronze lera a pasta, nao o nome do arquivo.
-O prefixo `dbfs:` e obrigatorio na CLI mesmo para volumes do Unity Catalog.
-
-### Recomecar do zero — destrutivo
-
-**Nao execute sem confirmar antes.** O comando abaixo remove o catalogo dev,
-todos os schemas, tabelas, volumes e arquivos armazenados neles. Nao foi executado
-no setup. Depois de uma remocao, o estado do bundle precisa ser reconciliado antes
- de um novo deploy.
-
-```bash
-databricks experimental aitools tools query --profile grid_intelligence \
-  "DROP CATALOG IF EXISTS grid_dev CASCADE"
-```
-
-## Atualizar bronze, silver e gold
-
-O job `grid_intelligence_atualizar` executa o pipeline serverless e depois as tasks
-SQL de governanca e metric view. STANDARD atende a atualizacao sem SLA de latencia.
-
-```bash
-databricks bundle validate --strict -t dev --profile grid_intelligence
-databricks bundle deploy -t dev --profile grid_intelligence
+# Upload the synthetic inputs before the first pipeline run.
 databricks bundle run grid_intelligence_atualizar -t dev --profile grid_intelligence
 ```
 
-O warehouse SQL e o grupo autorizado sao variaveis `warehouse_id` e
-`grupo_atendimento`. Antes de aplicar as mascaras, o grupo de conta precisa existir
-e incluir a identidade de execucao do pipeline/job. Sem isso, a task de governanca
-interrompe a aplicacao, pois o anonimizador perderia acesso ao original no proximo run.
-O grupo de conta `atendimento` foi provisionado com `rafcorte@gmail.com` como membro
-e vinculado ao workspace com acesso comum de usuario.
-As mascaras sao reaplicadas apos cada pipeline, inclusive apos full refresh.
-Enquanto uma tabela e recriada, use somente acesso restrito ao schema bronze.
+The CLI profile supplies the workspace host. Catalogs are selected in
+`databricks.yml`. The `atendimento` account group must exist and include the job
+identity before the masking task can run. See the [operating guide](docs/operations.md)
+for input paths, governance prerequisites, dashboard publishing and Genie setup.
 
-A silver numerica usa os ultimos 30 dias do dataset e os 90 anteriores como baseline.
-Tetos diarios de plausibilidade em kWh: residencial 200, comercial 2.000,
-industrial 50.000, rural 3.000 e poder publico 5.000. Classe desconhecida usa 200.
-Sao limites de consumo definidos neste projeto para triagem, nao limites regulatorios.
-Os parametros de inspecao sao queda de 30% e estabilidade do conjunto de ±10%.
+```bash
+python3 -m unittest discover -s tests -p 'test_*.py'
+python3 tests/verificar_dashboard.py --profile grid_intelligence \
+  --catalog grid_dev --schema gold --warehouse "$BUNDLE_VAR_warehouse_id"
+python3 scripts/aplicar_genie.py --profile grid_intelligence --target dev
+python3 scripts/testar_genie.py --profile grid_intelligence --target dev
+```
 
-O texto segue a rota deterministica. Nomes diferentes da coluna ou apelidos podem
-escapar da substituicao. Ironia, negacao, sinonimos e motivos compostos limitam a
-classificacao. Os sinais ficam identificados com `regras_de_texto`.
+Genie application executes its four example SQL queries before creating/updating
+the space. Detailed API evidence defaults to ignored `.databricks/evidence/`.
+Obtain private resource links with `bundle summary` or the local Genie state;
+workspace URLs and conversation exports are not public demo links.
 
-`gold.saude_cliente` resume o historico de chamados. Reincidencia e tom negativo
-sao comparados dentro da mesma janela movel de 30 dias. Para clientes com
-UCs em varias regioes, as dimensoes geograficas representam o chamado mais recente.
-O painel preserva dias de qualquer origem por FULL OUTER JOIN. Os sinais de
-inspecao, que sao uma fotografia atual, aparecem apenas no ultimo dia do dataset.
+## Repository map
 
-DEC e FEC sao consultados com `MEASURE()` em `gold.continuidade_metricas`.
-DEC e media mensal no recorte, DEC Acumulado soma os meses. O total de UCs e uma
-base media mensal. Conjuntos/meses sem evento aparecem com zero na continuidade
-para preservar o denominador de UCs tambem nesses meses.
-Os asserts dos criterios de aceite estao em `tests/aceite_silver_gold.sql`.
-Os testes de aplicacao e leitura das mascaras estao em `tests/aceite_governanca.sql`.
+| Path | Purpose |
+| --- | --- |
+| `resources/` | Bundle-managed schemas, volume, pipeline, job and dashboard |
+| `src/pipelines/` | Bronze, Silver and Gold SQL transformations |
+| `src/sql/` | Column-mask setup and the continuity metric view |
+| `src/dashboards/` | Versioned native AI/BI dashboard definition |
+| `src/genie/` | Portable Genie definition with `${catalogo}` |
+| `scripts/` | Genie apply and Conversation API evaluation |
+| `tests/` | Data/governance acceptance SQL and local script tests |
+| `prompts/` | Implementation requirements and business rules |
 
-## Proximas etapas
+## Portfolio and publication
 
-Siga os [prompts](prompts/README.md) em ordem: bronze, silver numeros, silver texto,
-gold, dashboard, agente e relatorio. A RN-03 continua pendente no PRD.
+- [Validation results and limitations](docs/validation.md)
+- [Privacy and publication review](docs/security-review.md)
+- [English LinkedIn draft and demonstration outline](docs/linkedin-post.md)
+
+The current demo is deployed in **development**. Production deployment,
+independent non-member access testing and a broader conversational benchmark
+remain future work. Do not present the system as production-ready or universally
+anonymized. Portuguese domain labels and copilot responses are intentional; this
+README explains the implementation for an international audience.

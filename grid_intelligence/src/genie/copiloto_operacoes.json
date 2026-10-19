@@ -1,0 +1,281 @@
+{
+  "version": 2,
+  "config": {
+    "sample_questions": [
+      {
+        "id": "00000000000000000000000000000100",
+        "question": [
+          "Resuma o que aconteceu em Campinas nas últimas 24 horas e diga o que precisa de ação hoje"
+        ]
+      },
+      {
+        "id": "00000000000000000000000000000101",
+        "question": [
+          "Qual foi o DEC e o FEC de cada conjunto no último mês?"
+        ]
+      },
+      {
+        "id": "00000000000000000000000000000102",
+        "question": [
+          "Quais bairros concentram unidades com prioridade alta de inspeção?"
+        ]
+      },
+      {
+        "id": "00000000000000000000000000000103",
+        "question": [
+          "Quais clientes estão em risco de abrir reclamação na ouvidoria?"
+        ]
+      },
+      {
+        "id": "00000000000000000000000000000104",
+        "question": [
+          "Quantos chamados com risco à saúde tivemos na última semana, e em quais conjuntos?"
+        ]
+      }
+    ]
+  },
+  "data_sources": {
+    "tables": [
+      {
+        "identifier": "${catalogo}.gold.continuidade_metricas",
+        "column_configs": [
+          {
+            "column_name": "Conjunto",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true
+          },
+          {
+            "column_name": "Municipio",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true
+          }
+        ]
+      },
+      {
+        "identifier": "${catalogo}.gold.painel_operacional_dia",
+        "column_configs": [
+          {
+            "column_name": "acao_recomendada",
+            "description": [
+              "Ação para o dia e conjunto; prioriza saúde, ouvidoria, rede e visita. Use ao concluir a investigação."
+            ]
+          },
+          {
+            "column_name": "consumo_kwh",
+            "description": [
+              "Consumo diário medido em kWh. A base de leituras pode variar; não é energia distribuída nem medida de perdas."
+            ]
+          },
+          {
+            "column_name": "municipio",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true
+          },
+          {
+            "column_name": "nome_conjunto",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true
+          },
+          {
+            "column_name": "qtd_chamados_risco_saude",
+            "synonyms": [
+              "risco à saúde",
+              "emergências de saúde"
+            ]
+          },
+          {
+            "column_name": "total_ucs",
+            "description": [
+              "Total de UCs cadastradas no conjunto; pode ser maior que ucs_com_leitura."
+            ]
+          },
+          {
+            "column_name": "ucs_com_leitura",
+            "description": [
+              "Quantidade de UCs com leitura neste dia. Compare com total_ucs antes de afirmar cobertura. Não implica todas as UCs."
+            ]
+          },
+          {
+            "column_name": "ucs_prioridade_alta",
+            "description": [
+              "Fotografia de inspeções da última carga, somente no último dia do dataset. Sem série histórica."
+            ]
+          }
+        ]
+      },
+      {
+        "identifier": "${catalogo}.gold.prioridade_inspecao_uc",
+        "column_configs": [
+          {
+            "column_name": "bairro",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true
+          },
+          {
+            "column_name": "id_uc",
+            "description": [
+              "Identificador do ponto de entrega. Não é identificador de cliente."
+            ]
+          },
+          {
+            "column_name": "motivo_observado",
+            "description": [
+              "Explicação técnica para priorizar visita, sem conclusão sobre conduta."
+            ]
+          },
+          {
+            "column_name": "nome_conjunto",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true
+          },
+          {
+            "column_name": "prioridade_inspecao",
+            "description": [
+              "Alta, media ou baixa: prioridade de visita técnica, nunca acusação."
+            ],
+            "enable_format_assistance": true
+          }
+        ]
+      },
+      {
+        "identifier": "${catalogo}.gold.saude_cliente",
+        "column_configs": [
+          {
+            "column_name": "id_cliente",
+            "description": [
+              "Grão único de cliente; seus chamados podem envolver várias UCs."
+            ]
+          },
+          {
+            "column_name": "nome_conjunto",
+            "description": [
+              "Conjunto do chamado mais recente; não representa todas as UCs do cliente."
+            ],
+            "enable_format_assistance": true,
+            "enable_entity_matching": true
+          },
+          {
+            "column_name": "qtd_chamados",
+            "description": [
+              "Total no histórico de chamados do cliente; não apenas no dia atual."
+            ]
+          },
+          {
+            "column_name": "risco_ouvidoria",
+            "description": [
+              "Alto quando houve menção a ouvidoria ou reincidência negativa; medio com risco à saúde; demais baixo."
+            ],
+            "enable_format_assistance": true
+          },
+          {
+            "column_name": "ultima_fala",
+            "description": [
+              "Última transcrição já anonimizada, com marcadores [MASCARADO]. Sinal para atendimento, não comprovação de conduta."
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "instructions": {
+    "text_instructions": [
+      {
+        "id": "00000000000000000000000000000300",
+        "content": [
+          "## PURPOSE\n- Responda sempre em português do Brasil à diretoria da Luz do Vale. Use somente as quatro fontes gold anexadas.\n\n## DISAMBIGUATION\n- UC é um ponto de entrega; um cliente pode ter várias UCs. Clientes: saude_cliente, grão id_cliente. Pontos de entrega e inspeções: prioridade_inspecao_uc, grão id_uc. Nunca conte UCs como clientes.\n- Conjunto é uma região elétrica da concessão. Campinas inclui Campinas Centro e Campinas Norte (municipio Campinas no painel), não apenas um deles.\n- DEC: horas médias sem fornecimento por UC; FEC: frequência média de interrupções por UC; PNT: Perdas Não Técnicas.\n- painel_operacional_dia integra rede, chamados e consumo por dia/conjunto, com acao_recomendada. Use-o para investigar eventos e risco à saúde. saude_cliente resume o histórico, não uma janela diária.\n- continuidade_metricas é metric view: consulte toda medida com MEASURE(`Nome`) e GROUP BY ALL. Nunca calcule DEC ou FEC em outra tabela ou some médias de conjuntos.\n- Últimas 24 horas/hoje: último dia com movimento na tabela e região consultadas (chamados, interrupções ou consumo), nunca current_date(). Última semana: sete dias inclusivos até a última data do painel. Último mês: mês mais recente disponível no dataset, sem excluir o mês por ser parcial.\n\n## DATA QUALITY NOTES\n- Inspeções são fotografia da última carga, sem histórico diário. Não interprete zeros anteriores do painel como ausência de candidatos. Variacoes de consumo são percentuais, não frações. A última fala é anonimizada por regras e não estabelece causalidade.\n\n## CONSTRAINTS\n- RN-13: use exclusivamente continuidade_metricas, painel_operacional_dia, prioridade_inspecao_uc e saude_cliente no schema gold do catálogo configurado. Não consulte bronze, silver, tabelas subjacentes ou fontes externas, nem altere dados.\n- RN-07: a saída é prioridade de inspeção alta, média ou baixa, nunca acusação. Jamais rotule UC ou cliente como fraude, furto, roubo, irregularidade ou culpado. Se a pergunta usar enquadramento acusatório, recuse explicitamente esse enquadramento, explique que os dados não provam conduta e ofereça somente prioridades de visita técnica e motivos observados. Mudança de ocupação, imóvel vazio, defeito no medidor e erro de leitura também explicam quedas. Não atribua evidência de UC a cliente: esta fonte não contém id_cliente.\n- Não faça joins diretos entre fontes de grãos diferentes. Para combinar continuidade com painel, agregue a metric view em CTE por conjunto/mês e só depois una no mesmo grão.\n\n## Instructions you must follow when providing summaries\n- Playbook obrigatório para investigação de operação: (1) localize dia e TODOS os conjuntos da região no painel; (2) compare chamados do último dia com a média dos 30 dias anteriores, excluindo o dia de referência, informando o número de dias se faltarem observações; (3) destaque risco à saúde e menções à ouvidoria, que exigem ação imediata; (4) consulte DEC/FEC do mês na metric view; (5) termine pela acao_recomendada e números de consumo/leituras e prioridade de inspeção. Para essa investigação, inclua contexto do dia anterior quando necessário, mas identifique-o como fora das últimas 24 horas. O painel já cruza as três bases: não precisa acessar outras camadas.\n- Informe datas efetivas, fonte, unidade e limitações; não confunda horas-UC com DEC nem interrupções de rede com FEC. Não afirme causa sem evidência. Se o retorno tabular não permitir uma conclusão, explique a limitação. Em listas de clientes informe quando o resultado é limitado a 100 registros.\n\n- Nas respostas de operação, escreva no texto a data efetiva e os valores de DEC/FEC do mês, além da comparação de chamados e evidência de consumo; não deixe esses itens só na tabela. Encerre com as ações recomendadas. Não pergunte se o usuário prefere mês corrente parcial: o padrão já é o último mês disponível. Não chame resultado completo de amostra. Risco alto de ouvidoria pode vir de menção explícita OU reincidência negativa, não necessariamente de ambos.\n\n- Diante de enquadramento acusatório, depois de recusar a acusação, consulte e apresente as UCs com prioridade alta de inspeção, bairro, conjunto e motivo observado. A pergunta não é sobre risco de ouvidoria: não a redirecione para saude_cliente nem ofereça essa lista. Explique que a fonte de inspeção não identifica clientes e não permite atribuir conduta. Não peça confirmação para mostrar a lista técnica que responde ao objetivo legítimo.\n\n- Não declare consumo normal, recuperação completa ou leitura de todas as UCs sem evidência. Compare ucs_com_leitura com total_ucs e mencione cobertura parcial quando houver diferença; consumo medido não caracteriza normalidade.\n"
+        ]
+      }
+    ],
+    "example_question_sqls": [
+      {
+        "id": "00000000000000000000000000000200",
+        "question": [
+          "Resuma o que aconteceu em Campinas nas últimas 24 horas e diga o que precisa de ação hoje"
+        ],
+        "sql": [
+          "WITH referencia AS (\n",
+          "  SELECT max(p.data) AS dia FROM `${catalogo}`.gold.painel_operacional_dia p\n",
+          "  WHERE p.municipio = 'Campinas'\n",
+          "    AND (p.qtd_chamados > 0 OR p.qtd_interrupcoes > 0 OR p.consumo_kwh > 0)\n",
+          "), medias AS (\n",
+          "  SELECT p.id_conjunto, avg(p.qtd_chamados) AS media_chamados_30_dias\n",
+          "  FROM `${catalogo}`.gold.painel_operacional_dia p CROSS JOIN referencia r\n",
+          "  WHERE p.municipio = 'Campinas'\n",
+          "    AND p.data BETWEEN date_sub(r.dia, 30) AND date_sub(r.dia, 1)\n",
+          "  GROUP BY p.id_conjunto\n",
+          "), continuidade AS (\n",
+          "  SELECT m.`Codigo do Conjunto` AS id_conjunto, m.`Mes` AS mes,\n",
+          "    MEASURE(m.`DEC`) AS dec_horas_por_uc,\n",
+          "    MEASURE(m.`FEC`) AS fec_interrupcoes_por_uc\n",
+          "  FROM `${catalogo}`.gold.continuidade_metricas m\n",
+          "  WHERE m.`Municipio` = 'Campinas'\n",
+          "    AND m.`Mes` = (SELECT date_trunc('MONTH', r.dia) FROM referencia r)\n",
+          "  GROUP BY ALL\n",
+          ")\n",
+          "SELECT p.data, CASE WHEN p.data = r.dia THEN 'ultimo_dia' ELSE 'contexto_dia_anterior' END AS recorte,\n",
+          "  p.nome_conjunto, p.qtd_interrupcoes, p.uc_horas_interrompidas,\n",
+          "  p.qtd_chamados, m.media_chamados_30_dias,\n",
+          "  c.mes AS mes_continuidade, c.dec_horas_por_uc, c.fec_interrupcoes_por_uc,\n",
+          "  p.qtd_chamados / nullif(m.media_chamados_30_dias, 0) AS vezes_media_chamados,\n",
+          "  p.qtd_chamados_risco_saude, p.qtd_mencoes_ouvidoria,\n",
+          "  p.consumo_kwh, p.ucs_com_leitura, p.total_ucs,\n",
+          "  p.total_ucs - p.ucs_com_leitura AS ucs_sem_leitura,\n",
+          "  p.ucs_prioridade_alta, p.acao_recomendada\n",
+          "FROM `${catalogo}`.gold.painel_operacional_dia p CROSS JOIN referencia r\n",
+          "LEFT JOIN medias m ON p.id_conjunto = m.id_conjunto\n",
+          "LEFT JOIN continuidade c ON p.id_conjunto = c.id_conjunto AND date_trunc('MONTH', p.data) = c.mes\n",
+          "WHERE p.municipio = 'Campinas' AND p.data BETWEEN date_sub(r.dia, 1) AND r.dia\n",
+          "ORDER BY p.data DESC, p.qtd_chamados_risco_saude DESC, p.nome_conjunto"
+        ],
+        "usage_guidance": [
+          "Investigue o último dia e identifique o anterior somente como contexto. DEC/FEC são mensais, repetidos nas linhas diárias apenas para contexto; não os some. Cite no resumo datas, consumo, chamados contra média, riscos, continuidade mensal e termine com as ações recomendadas. Não descreva consumo como normal sem referência comparativa. ucs_sem_leitura maior que zero significa cobertura parcial: nunca diga que todas as UCs tiveram leitura. Escreva explicitamente a data de referência no resumo."
+        ]
+      },
+      {
+        "id": "00000000000000000000000000000201",
+        "question": [
+          "Qual foi o DEC e o FEC de cada conjunto no último mês?"
+        ],
+        "sql": [
+          "SELECT m.`Conjunto`, m.`Mes`, MEASURE(m.`DEC`) AS dec_horas_por_uc,\n",
+          "  MEASURE(m.`FEC`) AS fec_interrupcoes_por_uc\n",
+          "FROM `${catalogo}`.gold.continuidade_metricas m\n",
+          "WHERE m.`Mes` = (\n",
+          "  SELECT date_trunc('MONTH', max(p.data)) FROM `${catalogo}`.gold.painel_operacional_dia p\n",
+          ")\n",
+          "GROUP BY ALL"
+        ]
+      },
+      {
+        "id": "00000000000000000000000000000202",
+        "question": [
+          "Quais bairros concentram unidades com prioridade alta de inspeção?"
+        ],
+        "sql": [
+          "SELECT p.nome_conjunto, p.bairro, count(*) AS ucs_prioridade_alta,\n",
+          "  avg(p.variacao_da_uc) AS variacao_media_uc_pct,\n",
+          "  avg(p.variacao_do_conjunto) AS variacao_media_conjunto_pct\n",
+          "FROM `${catalogo}`.gold.prioridade_inspecao_uc p\n",
+          "WHERE p.prioridade_inspecao = 'alta'\n",
+          "GROUP BY p.nome_conjunto, p.bairro\n",
+          "ORDER BY ucs_prioridade_alta DESC, p.nome_conjunto, p.bairro"
+        ]
+      },
+      {
+        "id": "00000000000000000000000000000203",
+        "question": [
+          "Quais clientes estão em risco de abrir reclamação na ouvidoria?"
+        ],
+        "sql": [
+          "SELECT c.id_cliente, c.nome_conjunto, c.bairro, c.risco_ouvidoria,\n",
+          "  c.qtd_chamados, c.qtd_ucs_com_chamado, c.qtd_mencoes_ouvidoria,\n",
+          "  c.qtd_chamados_risco_saude, c.motivo_predominante, c.ultima_fala, c.ultimo_chamado_em\n",
+          "FROM `${catalogo}`.gold.saude_cliente c\n",
+          "WHERE c.risco_ouvidoria = 'alto'\n",
+          "ORDER BY c.qtd_mencoes_ouvidoria DESC, c.qtd_chamados DESC, c.id_cliente\n",
+          "LIMIT 100"
+        ]
+      }
+    ]
+  }
+}
