@@ -17,14 +17,18 @@ board-level questions.
 Two prompts from the original design are not published here: an AI-based variant of step 03
 (described below) and a final executive-report step.
 
-## Who wrote what
+## Where these prompts come from
 
-These files are the specification, not the implementation. An AI agent (Claude Code) wrote
-the SQL, the bundle resources, the dashboard JSON and the Genie definition by executing these
-prompts one at a time. I wrote the prompts, the business rules, the acceptance criteria, and
-ran the acceptance SQL against the workspace after each step; anything that failed was
-corrected before the next prompt started. The visible result of that review is in
-[`docs/validation.md`](../docs/validation.md).
+They are the specification, not the implementation, and they are not mine. They are the prompt
+sequence of the Jornada de Dados aula prática
+[Projeto completo: uma área de atendimento com AI Dev Kit](https://lp.suajornadadedados.com.br/projeto-completo-databricks.html)
+by Luciano Vasconcelos, translated to English so the repository documents itself for an
+international reader. The original wording, in Portuguese, is on that page.
+
+An AI agent (Claude Code, with the official Databricks AI Dev Kit skills) executed them one at a
+time in my workspace. I ran each step's acceptance criteria against the real workspace, fixed
+what broke, and wrote the apply/test/verify scripts and the English documentation. What passed
+and what did not is in [`docs/validation.md`](../docs/validation.md).
 
 ## Step 03 has two routes — this repository ships the regex one
 

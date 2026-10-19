@@ -29,28 +29,33 @@ production readiness, prevented losses or financial savings.
 
 ## How this was built (AI-assisted, human-validated)
 
-This repository is also a record of how I work with AI coding agents, so the split is stated
-instead of hidden: the specification, the business rules, the acceptance criteria and the
-validation are mine; the implementation was written by an agent (Claude Code) from the
-prompt sequence in [`grid_intelligence/prompts/`](grid_intelligence/prompts/), then reviewed,
-corrected and proven before being committed.
+The brief is not mine, and that matters here. This project follows the Jornada de Dados aula
+prática [Projeto completo: uma área de atendimento com AI Dev Kit](https://lp.suajornadadedados.com.br/projeto-completo-databricks.html)
+by Luciano Vasconcelos, which provides the fictional utility, the synthetic dataset, the business
+rules (RN-01 to RN-14), the layer boundaries, the guard rails and an eight-step prompt sequence
+meant to be executed with an AI coding agent, one step at a time. The files in
+[`grid_intelligence/prompts/`](grid_intelligence/prompts/) are that material, translated to
+English for this documentation.
 
-| Human work | Agent work |
+What I did on top of it, and what the agent did:
+
+| Mine | The agent's |
 | --- | --- |
-| Domain rules RN-01 to RN-14, grain decisions, privacy boundary between original and masked text | First-pass SQL for Bronze, Silver and Gold, the metric view YAML, the dashboard JSON and the Genie definition |
-| The eight prompts: scope, known traps and acceptance criteria per step | Bundle resources, deployment scripts and their tests |
-| Execution against the workspace, the SQL assertions in `tests/`, and the evidence in `docs/` | Refactors and option comparisons inside a step |
+| Executed the sequence end to end in my own Databricks workspace with Claude Code and the official AI Dev Kit skills | The SQL for Bronze, Silver and Gold, the metric view YAML, the dashboard JSON and the Genie definition, prompt by prompt |
+| Debugged what the step descriptions do not cover: catalog and bundle ordering, a function DDL that broke the job, the account group the masking task needs, dashboard drift after a UI edit | Bundle resources, and a first pass at the deployment scripts |
+| The Genie apply script and its Conversation API tests, the dashboard SQL validator, the CI workflow | Refactors and option comparisons inside a step |
+| The English documentation, the privacy review and the validation report, including the checks that failed | |
 
-Two rules kept the method honest: an agent output counts only after the step's acceptance
-criteria run against the real workspace, and anything that failed stays documented in the
-[validation report](grid_intelligence/docs/validation.md) — including the parts that are still
-open.
+Two rules kept it honest: an agent output counted only after that step's acceptance criteria ran
+against the real workspace, and what failed stayed in the
+[validation report](grid_intelligence/docs/validation.md) instead of disappearing.
 
-This is one of two modes I work in. Earlier projects were built directly, file by file — for
-example [data_modelling_databricks](https://github.com/rafacorte1/data_modelling_databricks),
-an e-commerce dimensional model with SCD Type 2 written in Databricks notebooks and SQL. That
-is what makes the delegation a choice rather than a dependency: the specification and the
-review are the parts that do not get delegated.
+This is one of two build modes in this profile.
+[data_modelling_databricks](https://github.com/rafacorte1/data_modelling_databricks) is a
+dimensional model with SCD Type 2 written directly in notebooks and SQL, without an agent.
+Writing a specification and landing someone else's specification are different skills, and both
+are worth showing. The work that is not delegable in either mode is the same: deciding what
+counts as done, and proving it.
 
 ## Architecture
 
@@ -170,4 +175,6 @@ English.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT for the code and documentation in this repository, except
+`grid_intelligence/prompts/`, which is third-party course material reproduced with credit to its
+author. See [LICENSE](LICENSE).
