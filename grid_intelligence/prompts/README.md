@@ -1,6 +1,6 @@
 # The prompt sequence
 
-Each file in this folder is a **prompt ready to paste into Claude Code**. Together they
+Each file in this folder is a **prompt ready to paste into your coding agent**. Together they
 build Grid Intelligence from scratch — from an empty catalog to the copilot answering
 board-level questions.
 
@@ -25,8 +25,9 @@ sequence of the Jornada de Dados aula prática
 by Luciano Vasconcelos, translated to English so the repository documents itself for an
 international reader. The original wording, in Portuguese, is on that page.
 
-An AI agent (Claude Code, with the official Databricks AI Dev Kit skills) executed them one at a
-time in my workspace. I ran each step's acceptance criteria against the real workspace, fixed
+An AI agent (Codex, with the official Databricks AI Dev Kit skills) executed them one at a time
+in my workspace. The sequence as published by the course is written for Claude Code; this run was
+done with Codex. I ran each step's acceptance criteria against the real workspace, fixed
 what broke, and wrote the apply/test/verify scripts and the English documentation. What passed
 and what did not is in [`docs/validation.md`](../docs/validation.md).
 
@@ -49,7 +50,7 @@ took.
 
 ## How to use it
 
-1. Open Claude Code in the repository
+1. Open your coding agent in the repository
 2. Paste the whole prompt, from start to finish
 3. Let it work, review, deploy and **look at the result**
 4. Only then move on to the next one

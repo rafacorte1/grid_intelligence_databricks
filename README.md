@@ -41,7 +41,7 @@ What I did on top of it, and what the agent did:
 
 | Mine | The agent's |
 | --- | --- |
-| Executed the sequence end to end in my own Databricks workspace with Claude Code and the official AI Dev Kit skills | The SQL for Bronze, Silver and Gold, the metric view YAML, the dashboard JSON and the Genie definition, prompt by prompt |
+| Executed the sequence end to end in my own Databricks workspace with Codex and the official AI Dev Kit skills | The SQL for Bronze, Silver and Gold, the metric view YAML, the dashboard JSON and the Genie definition, prompt by prompt |
 | Debugged what the step descriptions do not cover: catalog and bundle ordering, a function DDL that broke the job, the account group the masking task needs, dashboard drift after a UI edit | Bundle resources, and a first pass at the deployment scripts |
 | The Genie apply script and its Conversation API tests, the dashboard SQL validator, the CI workflow | Refactors and option comparisons inside a step |
 | The English documentation, the privacy review and the validation report, including the checks that failed | |
