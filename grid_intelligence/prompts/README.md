@@ -27,9 +27,9 @@ international reader. The original wording, in Portuguese, is on that page.
 
 An AI agent (Codex, with the official Databricks AI Dev Kit skills) executed them one at a time
 in my workspace. The sequence as published by the course is written for Claude Code; this run was
-done with Codex. I ran each step's acceptance criteria against the real workspace, fixed
-what broke, and wrote the apply/test/verify scripts and the English documentation. What passed
-and what did not is in [`docs/validation.md`](../docs/validation.md).
+done with Codex. I validated each step against the real workspace with acceptance SQL and
+Conversation API tests, fixed what broke, and wrote the apply/test/verify scripts and the English
+documentation. What passed, and what stayed open, is in [`docs/validation.md`](../docs/validation.md).
 
 ## Step 03 has two routes — this repository ships the regex one
 
