@@ -66,7 +66,9 @@ stealing energy", it answers with the priority list and **explains the differenc
 ## Sample questions and sample SQL
 
 Use exactly these five as `sample_questions`. They are not decorative: each one forces a
-different table, and together they cover all four sources.
+different table, and together they cover all four sources. The questions are written in
+Portuguese in the versioned JSON (`src/genie/copiloto_operacoes.json`) because the space
+answers in Portuguese; the English below is a translation for readers of this prompt.
 
 | # | Question | Should query | What it tests |
 |---|---|---|---|
