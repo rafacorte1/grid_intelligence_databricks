@@ -139,6 +139,10 @@ not as production-ready or universally anonymized.
 
 ## Language note
 
-Business rules, table names and copilot responses are in Brazilian Portuguese because the
-domain is a Brazilian utility. The English documentation explains the implementation for an
-international audience.
+Business rules, table and column names, and copilot responses are in Brazilian Portuguese
+because the domain is a Brazilian utility. The dashboard labels and all documentation are in
+English.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
