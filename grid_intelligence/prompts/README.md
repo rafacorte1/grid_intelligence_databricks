@@ -17,6 +17,15 @@ board-level questions.
 Two prompts from the original design are not published here: an AI-based variant of step 03
 (described below) and a final executive-report step.
 
+## Who wrote what
+
+These files are the specification, not the implementation. An AI agent (Claude Code) wrote
+the SQL, the bundle resources, the dashboard JSON and the Genie definition by executing these
+prompts one at a time. I wrote the prompts, the business rules, the acceptance criteria, and
+ran the acceptance SQL against the workspace after each step; anything that failed was
+corrected before the next prompt started. The visible result of that review is in
+[`docs/validation.md`](../docs/validation.md).
+
 ## Step 03 has two routes — this repository ships the regex one
 
 **It is the only point in the sequence where AI can enter the data pipeline**, and it is where

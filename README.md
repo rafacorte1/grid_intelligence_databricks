@@ -12,7 +12,7 @@ Every number in this repository comes from a synthetic dataset built for the pro
 utility is fictional, the deployment is development-only, and nothing here is a claim of
 production readiness, prevented losses or financial savings.
 
-## What the project demonstrates
+## What it demonstrates
 
 - **Lakehouse engineering:** Bronze → Silver → Gold pipelines with explicit grains,
   plausibility checks, deduplication and dataset-relative analysis windows.
@@ -26,6 +26,29 @@ production readiness, prevented losses or financial savings.
   and is tested through the Conversation API, including an adversarial question.
 - **Deployment as code:** Declarative Automation Bundles manage platform resources; the Genie
   definition is versioned and applied by an idempotent Python/CLI script.
+
+## How this was built (AI-assisted, human-validated)
+
+This repository is also a record of how I work with AI coding agents, so the split is stated
+instead of hidden: the specification, the business rules, the acceptance criteria and the
+validation are mine; the implementation was written by an agent (Claude Code) from the
+prompt sequence in [`grid_intelligence/prompts/`](grid_intelligence/prompts/), then reviewed,
+corrected and proven before being committed.
+
+| Human work | Agent work |
+| --- | --- |
+| Domain rules RN-01 to RN-14, grain decisions, privacy boundary between original and masked text | First-pass SQL for Bronze, Silver and Gold, the metric view YAML, the dashboard JSON and the Genie definition |
+| The eight prompts: scope, known traps and acceptance criteria per step | Bundle resources, deployment scripts and their tests |
+| Execution against the workspace, the SQL assertions in `tests/`, and the evidence in `docs/` | Refactors and option comparisons inside a step |
+
+Two rules kept the method honest: an agent output counts only after the step's acceptance
+criteria run against the real workspace, and anything that failed stays documented in the
+[validation report](grid_intelligence/docs/validation.md) — including the parts that are still
+open.
+
+This is one of two modes I work in. Earlier projects were built file by file, which is what
+makes the delegation a choice rather than a dependency: the specification and the review are
+the parts that do not get delegated.
 
 ## Architecture
 
